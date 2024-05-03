@@ -3,10 +3,12 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"restAPI/entity"
 	"restAPI/service"
 	"strconv"
+	"time"
 )
 
 type Handler struct {
@@ -79,4 +81,48 @@ func (h *Handler) Users(w http.ResponseWriter, _ *http.Request) {
 	}
 
 	sendResponse(w, users)
+}
+
+func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
+	var user entity.User
+
+	err := json.NewDecoder(r.Body).Decode(&user)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	sessionID, err := h.us.Login(user.Email, user.Password)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	cookie := &http.Cookie{
+		Name:     "session_id",
+		Value:    sessionID.String(),
+		Path:     "/",
+		Expires:  time.Now().Add(time.Hour * 24),
+		MaxAge:   24 * 60 * 60,
+		Secure:   true,
+		HttpOnly: true,
+	}
+
+	http.SetCookie(w, cookie)
+}
+
+func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	user, err := h.us.UserBySessionID(cookie.Value)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	fmt.Println(user)
 }

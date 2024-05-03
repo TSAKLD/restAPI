@@ -3,6 +3,7 @@ package repository
 import (
 	"database/sql"
 	"errors"
+	"github.com/google/uuid"
 	"restAPI/entity"
 )
 
@@ -89,4 +90,45 @@ func (r *Repository) Users() (users []entity.User, err error) {
 	}
 
 	return users, nil
+}
+
+func (r *Repository) UserByEmailAndPassword(email string, password string) (u entity.User, err error) {
+	q := "SELECT id, name, email, created_at FROM users WHERE email = $1 AND password = $2"
+
+	err = r.db.QueryRow(q, email, password).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.User{}, entity.ErrNotFound
+		}
+
+		return u, err
+	}
+
+	return u, nil
+}
+
+func (r *Repository) CreateSession(sessionID uuid.UUID, userID int64) error {
+	q := "INSERT INTO sessions(session_id, user_id) VALUES($1, $2)"
+
+	_, err := r.db.Exec(q, sessionID, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *Repository) UserBySessionID(sessionID string) (u entity.User, err error) {
+	q := "select u.id, u.email, u.name, u.created_at from users u JOIN sessions s ON u.id = s.user_id WHERE s.session_id = $1"
+
+	err = r.db.QueryRow(q, sessionID).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.User{}, entity.ErrNotFound
+		}
+
+		return u, err
+	}
+
+	return u, nil
 }

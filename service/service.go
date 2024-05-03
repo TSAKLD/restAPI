@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"github.com/google/uuid"
 	"restAPI/entity"
 	"restAPI/repository"
 	"time"
@@ -63,4 +64,28 @@ func (us *UserService) Users() ([]entity.User, error) {
 	}
 
 	return users, nil
+}
+
+func (us *UserService) Login(email string, password string) (uuid.UUID, error) {
+	user, err := us.repo.UserByEmailAndPassword(email, password)
+	if err != nil {
+		if errors.Is(err, entity.ErrNotFound) {
+			return uuid.UUID{}, entity.ErrUnauthorized
+		}
+
+		return uuid.UUID{}, err
+	}
+
+	sessionID := uuid.New()
+
+	err = us.repo.CreateSession(sessionID, user.ID)
+	if err != nil {
+		return uuid.UUID{}, err
+	}
+
+	return sessionID, nil
+}
+
+func (us *UserService) UserBySessionID(sessionID string) (entity.User, error) {
+	return entity.User{}, nil
 }

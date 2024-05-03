@@ -18,8 +18,11 @@ func sendError(w http.ResponseWriter, err error) {
 
 	statusCode := http.StatusInternalServerError
 
-	if errors.Is(err, entity.ErrNotFound) {
+	switch {
+	case errors.Is(err, entity.ErrNotFound):
 		statusCode = http.StatusNotFound
+	case errors.Is(err, entity.ErrUnauthorized):
+		statusCode = http.StatusUnauthorized
 	}
 
 	w.WriteHeader(statusCode)
