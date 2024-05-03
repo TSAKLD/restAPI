@@ -26,6 +26,8 @@ func main() {
 	}
 	defer db.Close()
 
+	log.Println("postgres DB connection status: OK")
+
 	repo := repository.New(db)
 
 	us := service.New(repo)
