@@ -2,8 +2,10 @@ package api
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
+	"restAPI/entity"
 )
 
 type Error struct {
@@ -11,8 +13,14 @@ type Error struct {
 }
 
 // sendError sending response with error based on error + status code.
-func sendError(w http.ResponseWriter, err error, statusCode int) {
+func sendError(w http.ResponseWriter, err error) {
 	w.Header().Set("Content-Type", "application/json")
+
+	statusCode := http.StatusInternalServerError
+
+	if errors.Is(err, entity.ErrNotFound) {
+		statusCode = http.StatusNotFound
+	}
 
 	w.WriteHeader(statusCode)
 
@@ -22,7 +30,7 @@ func sendError(w http.ResponseWriter, err error, statusCode int) {
 	}
 }
 
-func sendResponse(w http.ResponseWriter, v ...interface{}) {
+func sendResponse(w http.ResponseWriter, v any) {
 	w.Header().Set("Content-Type", "application/json")
 
 	err := json.NewEncoder(w).Encode(v)

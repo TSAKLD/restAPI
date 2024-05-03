@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"errors"
 	"restAPI/entity"
-	"restAPI/service"
 )
 
 type Repository struct {
@@ -45,7 +44,7 @@ func (r *Repository) UserByID(id int64) (u entity.User, err error) {
 	err = r.db.QueryRow(q, id).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return entity.User{}, service.ErrNotFound
+			return entity.User{}, entity.ErrNotFound
 		}
 
 		return u, err
@@ -60,7 +59,7 @@ func (r *Repository) UserByEmail(email string) (u entity.User, err error) {
 	err = r.db.QueryRow(q, email).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return entity.User{}, service.ErrNotFound
+			return entity.User{}, entity.ErrNotFound
 		}
 
 		return u, err

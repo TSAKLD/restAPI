@@ -22,13 +22,13 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 
 	err := json.NewDecoder(r.Body).Decode(&user)
 	if err != nil {
-		sendError(w, err, http.StatusInternalServerError)
+		sendError(w, err)
 		return
 	}
 
 	user, err = h.us.RegisterUser(user)
 	if err != nil {
-		sendError(w, err, http.StatusBadRequest)
+		sendError(w, err)
 		return
 	}
 
@@ -40,13 +40,13 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.ParseInt(qID, 10, 64)
 	if err != nil {
-		sendError(w, errors.New("'id' must be an integer"), http.StatusBadRequest)
+		sendError(w, errors.New("'id' must be an integer"))
 		return
 	}
 
 	err = h.us.DeleteUser(id)
 	if err != nil {
-		sendError(w, err, http.StatusBadRequest)
+		sendError(w, err)
 		return
 	}
 
@@ -58,13 +58,13 @@ func (h *Handler) UserByID(w http.ResponseWriter, r *http.Request) {
 
 	id, err := strconv.ParseInt(qID, 10, 64)
 	if err != nil {
-		sendError(w, errors.New("'id' must be an integer"), http.StatusBadRequest)
+		sendError(w, errors.New("'id' must be an integer"))
 		return
 	}
 
 	user, err := h.us.UserByID(id)
 	if err != nil {
-		sendError(w, err, http.StatusBadRequest)
+		sendError(w, err)
 		return
 	}
 
@@ -74,7 +74,7 @@ func (h *Handler) UserByID(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) Users(w http.ResponseWriter, r *http.Request) {
 	users, err := h.us.Users()
 	if err != nil {
-		sendError(w, err, http.StatusInternalServerError)
+		sendError(w, err)
 		return
 	}
 
