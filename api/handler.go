@@ -71,7 +71,7 @@ func (h *Handler) UserByID(w http.ResponseWriter, r *http.Request) {
 	sendResponse(w, user)
 }
 
-func (h *Handler) Users(w http.ResponseWriter, r *http.Request) {
+func (h *Handler) Users(w http.ResponseWriter, _ *http.Request) {
 	users, err := h.us.Users()
 	if err != nil {
 		sendError(w, err)
