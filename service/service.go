@@ -16,6 +16,8 @@ func New(repo *repository.Repository) *UserService {
 	return &UserService{repo: repo}
 }
 
+// user manipulations
+
 func (us *UserService) RegisterUser(user entity.User) (entity.User, error) {
 	_, err := us.repo.UserByEmail(user.Email)
 	if err == nil {
@@ -88,4 +90,42 @@ func (us *UserService) Login(email string, password string) (uuid.UUID, error) {
 
 func (us *UserService) UserBySessionID(sessionID string) (entity.User, error) {
 	return entity.User{}, nil
+}
+
+// project manipulations
+
+func (us *UserService) CreateProject(project entity.Project) (entity.Project, error) {
+	project, err := us.repo.CreateProject(project)
+	if err != nil {
+		return entity.Project{}, err
+	}
+
+	return project, nil
+}
+
+func (us *UserService) ProjectByID(id int64) (entity.Project, error) {
+	project, err := us.repo.ProjectByID(id)
+	if err != nil {
+		return entity.Project{}, err
+	}
+
+	return project, nil
+}
+
+func (us *UserService) Projects(ownerID int64) ([]entity.Project, error) {
+	return us.repo.Projects(ownerID)
+}
+
+func (us *UserService) DeleteProject(ownerID int64, projectID int64) error {
+	_, err := us.repo.ProjectByID(projectID)
+	if err != nil {
+		return err
+	}
+
+	err = us.repo.DeleteProject(ownerID, projectID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

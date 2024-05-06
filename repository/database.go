@@ -132,3 +132,63 @@ func (r *Repository) UserBySessionID(sessionID string) (u entity.User, err error
 
 	return u, nil
 }
+
+func (r *Repository) CreateProject(project entity.Project) (entity.Project, error) {
+	q := "INSERT INTO project(owner_id, owner_email, owner_name, created_at) VALUES($1, $2, $3, $4) RETURNING id"
+
+	err := r.db.QueryRow(q, project.OwnerName, project.OwnerEmail, project.OwnerName, project.CreatedAt).Scan(&project.ID)
+	if err != nil {
+		return entity.Project{}, err
+	}
+
+	return project, nil
+}
+
+func (r *Repository) Projects(userID int64) (projects []entity.Project, err error) {
+	q := "SELECT id, name, owner_id, owner_email, owner_name, created_at FROM projects WHERE owner_id = $1"
+
+	rows, err := r.db.Query(q, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var p entity.Project
+
+		err = rows.Scan(&p.ID, &p.Name, &p.OwnerID, &p.OwnerEmail, &p.OwnerName, &p.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		projects = append(projects, p)
+	}
+
+	return projects, nil
+}
+
+func (r *Repository) ProjectByID(id int64) (p entity.Project, err error) {
+	q := "SELECT id, name, owner_id, owner_email, owner_name, created_at FROM users WHERE id = $1"
+
+	err = r.db.QueryRow(q, id).Scan(&p.ID, &p.Name, &p.OwnerID, &p.OwnerEmail, &p.Name, p.CreatedAt)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return entity.Project{}, entity.ErrNotFound
+		}
+
+		return p, err
+	}
+
+	return p, nil
+}
+
+func (r *Repository) DeleteProject(ownerID int64, projectID int64) error {
+	q := "DELETE FROM users WHERE id = $1 AND owner_id = $2"
+
+	_, err := r.db.Exec(q, projectID, ownerID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

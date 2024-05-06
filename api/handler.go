@@ -3,7 +3,6 @@ package api
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"net/http"
 	"restAPI/entity"
 	"restAPI/service"
@@ -124,5 +123,69 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println(user)
+	project := entity.Project{
+		Name:       "",
+		OwnerID:    user.ID,
+		OwnerEmail: user.Email,
+		OwnerName:  user.Name,
+		CreatedAt:  time.Now(),
+	}
+
+	project, err = h.us.CreateProject(project)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	sendResponse(w, project)
+}
+
+func (h *Handler) Projects(w http.ResponseWriter, r *http.Request) {
+	qID := r.PathValue("owner_id")
+	userID, err := strconv.ParseInt(qID, 10, 64)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	projects, err := h.us.Projects(userID)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	sendResponse(w, projects)
+}
+
+func (h *Handler) ProjectByID(w http.ResponseWriter, r *http.Request) {
+
+}
+
+func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
+	qID := r.PathValue("project_id")
+	projectID, err := strconv.ParseInt(qID, 10, 64)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	user, err := h.us.UserBySessionID(cookie.Value)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	err = h.us.DeleteProject(user.ID, projectID)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
 }
