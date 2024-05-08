@@ -39,6 +39,8 @@ func (s *Server) setRoutes() {
 	//s.router.HandleFunc("POST /projects", s.h.EditProject)
 
 	// task routes
+	s.router.HandleFunc("POST /tasks", s.h.CreateTask)
+	s.router.HandleFunc("GET /tasks/{id}", s.h.TaskByID)
 }
 
 func (s *Server) Start() error {

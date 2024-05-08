@@ -138,3 +138,27 @@ func (us *UserService) DeleteProject(ownerID int64, projectID int64) error {
 
 	return nil
 }
+
+func (us *UserService) CreateTask(cTask entity.TaskToCreate) (entity.Task, error) {
+	task := entity.Task{
+		Name:      cTask.Name,
+		UserID:    cTask.UserID,
+		ProjectID: cTask.ProjectID,
+		CreatedAt: time.Now(),
+	}
+
+	project, err := us.repo.ProjectByID(task.ProjectID)
+	if err != nil {
+		return entity.Task{}, err
+	}
+
+	if project.UserID != task.UserID {
+		return entity.Task{}, fmt.Errorf("%w: not your project", entity.ErrForbidden)
+	}
+
+	return us.repo.CreateTask(task)
+}
+
+func (us *UserService) TaskByID(id int64) (entity.Task, error) {
+	return us.repo.TaskByID(id)
+}

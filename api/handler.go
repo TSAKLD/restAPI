@@ -209,3 +209,50 @@ func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 }
+
+func (h *Handler) CreateTask(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	user, err := h.us.UserBySessionID(cookie.Value)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	cTask := entity.TaskToCreate{UserID: user.ID}
+
+	err = json.NewDecoder(r.Body).Decode(&cTask)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	task, err := h.us.CreateTask(cTask)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	sendResponse(w, task)
+}
+
+func (h *Handler) TaskByID(w http.ResponseWriter, r *http.Request) {
+	qID := r.PathValue("id")
+	id, err := strconv.ParseInt(qID, 10, 64)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	task, err := h.us.TaskByID(id)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	sendResponse(w, task)
+}
