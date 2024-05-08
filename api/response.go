@@ -23,6 +23,8 @@ func sendError(w http.ResponseWriter, err error) {
 		statusCode = http.StatusNotFound
 	case errors.Is(err, entity.ErrUnauthorized):
 		statusCode = http.StatusUnauthorized
+	case errors.Is(err, entity.ErrForbidden):
+		statusCode = http.StatusForbidden
 	}
 
 	w.WriteHeader(statusCode)

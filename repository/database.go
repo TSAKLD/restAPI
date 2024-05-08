@@ -5,6 +5,7 @@ import (
 	"errors"
 	"github.com/google/uuid"
 	"restAPI/entity"
+	"time"
 )
 
 type Repository struct {
@@ -107,10 +108,10 @@ func (r *Repository) UserByEmailAndPassword(email string, password string) (u en
 	return u, nil
 }
 
-func (r *Repository) CreateSession(sessionID uuid.UUID, userID int64) error {
-	q := "INSERT INTO sessions(session_id, user_id) VALUES($1, $2)"
+func (r *Repository) CreateSession(sessionID uuid.UUID, userID int64, createdAt time.Time) error {
+	q := "INSERT INTO sessions(id, user_id, created_at) VALUES($1, $2, $3)"
 
-	_, err := r.db.Exec(q, sessionID, userID)
+	_, err := r.db.Exec(q, sessionID, userID, createdAt)
 	if err != nil {
 		return err
 	}
@@ -119,7 +120,7 @@ func (r *Repository) CreateSession(sessionID uuid.UUID, userID int64) error {
 }
 
 func (r *Repository) UserBySessionID(sessionID string) (u entity.User, err error) {
-	q := "select u.id, u.email, u.name, u.created_at from users u JOIN sessions s ON u.id = s.user_id WHERE s.session_id = $1"
+	q := "SELECT u.id, u.email, u.name, u.created_at FROM users u JOIN sessions s ON u.id = s.user_id WHERE s.id = $1"
 
 	err = r.db.QueryRow(q, sessionID).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
 	if err != nil {
@@ -134,9 +135,9 @@ func (r *Repository) UserBySessionID(sessionID string) (u entity.User, err error
 }
 
 func (r *Repository) CreateProject(project entity.Project) (entity.Project, error) {
-	q := "INSERT INTO project(owner_id, owner_email, owner_name, created_at) VALUES($1, $2, $3, $4) RETURNING id"
+	q := "INSERT INTO project(name, user_id, created_at) VALUES($1, $2, $3) RETURNING id"
 
-	err := r.db.QueryRow(q, project.OwnerName, project.OwnerEmail, project.OwnerName, project.CreatedAt).Scan(&project.ID)
+	err := r.db.QueryRow(q, project.Name, project.UserID, project.CreatedAt).Scan(&project.ID)
 	if err != nil {
 		return entity.Project{}, err
 	}
@@ -144,8 +145,8 @@ func (r *Repository) CreateProject(project entity.Project) (entity.Project, erro
 	return project, nil
 }
 
-func (r *Repository) Projects(userID int64) (projects []entity.Project, err error) {
-	q := "SELECT id, name, owner_id, owner_email, owner_name, created_at FROM projects WHERE owner_id = $1"
+func (r *Repository) UserProjects(userID int64) (projects []entity.Project, err error) {
+	q := "SELECT id, name, user_id, created_at FROM projects WHERE user_id = $1"
 
 	rows, err := r.db.Query(q, userID)
 	if err != nil {
@@ -156,7 +157,7 @@ func (r *Repository) Projects(userID int64) (projects []entity.Project, err erro
 	for rows.Next() {
 		var p entity.Project
 
-		err = rows.Scan(&p.ID, &p.Name, &p.OwnerID, &p.OwnerEmail, &p.OwnerName, &p.CreatedAt)
+		err = rows.Scan(&p.ID, &p.Name, &p.UserID, &p.CreatedAt)
 		if err != nil {
 			return nil, err
 		}
@@ -168,9 +169,9 @@ func (r *Repository) Projects(userID int64) (projects []entity.Project, err erro
 }
 
 func (r *Repository) ProjectByID(id int64) (p entity.Project, err error) {
-	q := "SELECT id, name, owner_id, owner_email, owner_name, created_at FROM users WHERE id = $1"
+	q := "SELECT id, name, user_id, created_at FROM users WHERE id = $1"
 
-	err = r.db.QueryRow(q, id).Scan(&p.ID, &p.Name, &p.OwnerID, &p.OwnerEmail, &p.Name, p.CreatedAt)
+	err = r.db.QueryRow(q, id).Scan(&p.ID, &p.Name, &p.UserID, p.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.Project{}, entity.ErrNotFound
@@ -182,10 +183,10 @@ func (r *Repository) ProjectByID(id int64) (p entity.Project, err error) {
 	return p, nil
 }
 
-func (r *Repository) DeleteProject(ownerID int64, projectID int64) error {
-	q := "DELETE FROM users WHERE id = $1 AND owner_id = $2"
+func (r *Repository) DeleteProject(projectID int64) error {
+	q := "DELETE FROM projects WHERE id = $1"
 
-	_, err := r.db.Exec(q, projectID, ownerID)
+	_, err := r.db.Exec(q, projectID)
 	if err != nil {
 		return err
 	}

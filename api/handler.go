@@ -124,11 +124,9 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
 	}
 
 	project := entity.Project{
-		Name:       "",
-		OwnerID:    user.ID,
-		OwnerEmail: user.Email,
-		OwnerName:  user.Name,
-		CreatedAt:  time.Now(),
+		Name:      "",
+		UserID:    user.ID,
+		CreatedAt: time.Now(),
 	}
 
 	project, err = h.us.CreateProject(project)

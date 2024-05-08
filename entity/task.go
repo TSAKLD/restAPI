@@ -1,7 +1,6 @@
 package entity
 
 type Task struct {
-	ID      int64
-	Name    string
-	Project Project
+	ID   int64
+	Name string
 }

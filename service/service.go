@@ -2,6 +2,7 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"github.com/google/uuid"
 	"restAPI/entity"
 	"restAPI/repository"
@@ -80,7 +81,9 @@ func (us *UserService) Login(email string, password string) (uuid.UUID, error) {
 
 	sessionID := uuid.New()
 
-	err = us.repo.CreateSession(sessionID, user.ID)
+	createdAt := time.Now()
+
+	err = us.repo.CreateSession(sessionID, user.ID, createdAt)
 	if err != nil {
 		return uuid.UUID{}, err
 	}
@@ -113,16 +116,20 @@ func (us *UserService) ProjectByID(id int64) (entity.Project, error) {
 }
 
 func (us *UserService) Projects(ownerID int64) ([]entity.Project, error) {
-	return us.repo.Projects(ownerID)
+	return us.repo.UserProjects(ownerID)
 }
 
 func (us *UserService) DeleteProject(ownerID int64, projectID int64) error {
-	_, err := us.repo.ProjectByID(projectID)
+	project, err := us.repo.ProjectByID(projectID)
 	if err != nil {
 		return err
 	}
 
-	err = us.repo.DeleteProject(ownerID, projectID)
+	if ownerID != project.UserID {
+		return fmt.Errorf("%w: not your project", entity.ErrForbidden)
+	}
+
+	err = us.repo.DeleteProject(projectID)
 	if err != nil {
 		return err
 	}
