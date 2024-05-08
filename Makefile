@@ -6,3 +6,10 @@ migrate-up:
 
 migrate-down:
 	 goose -dir migrations postgres "user=kr host=localhost port=5432 password=dev dbname=userdb sslmode=disable"  down
+
+run-tests:
+	docker rm -f db_test || true
+	docker run --name db_test -p "5433:5432" -e POSTGRES_PASSWORD=postgres -d postgres:16.2 && \
+	timeout 3 && \
+	goose -dir migrations postgres "user=postgres host=localhost port=5433 password=postgres dbname=postgres sslmode=disable"  up && \
+	go test ./...

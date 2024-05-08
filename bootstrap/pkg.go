@@ -3,6 +3,7 @@ package bootstrap
 import (
 	"database/sql"
 	"fmt"
+	_ "github.com/lib/pq"
 )
 
 // DBConnect connects you to Postgresql based on Config.
