@@ -194,29 +194,63 @@ func TestRepository_Projects_Error(t *testing.T) {
 	require.Error(t, err)
 }
 
-//func TestRepository_CreateTask(t *testing.T) {
-//	cfg := &bootstrap.Config{
-//		DBHost:     "localhost",
-//		DBPort:     "5433",
-//		DBUser:     "postgres",
-//		DBPassword: "postgres",
-//		DBName:     "postgres",
-//	}
-//
-//	db, err := bootstrap.DBConnect(cfg)
-//	require.NoError(t, err)
-//	defer db.Close()
-//
-//	repo := New(db)
-//
-//	task := entity.Task{
-//		ID:        time.Now().UnixNano(),
-//		Name:      uuid.NewString(),
-//		UserID:    time.Now().UnixNano(),
-//		ProjectID: time.Now().UnixNano(),
-//		CreatedAt: time.Time{},
-//	}
-//
-//	task, err = repo.CreateTask(task)
-//	require.NoError(t, err)
-//}
+func TestRepository_CreateTask(t *testing.T) {
+	cfg := &bootstrap.Config{
+		DBHost:     "localhost",
+		DBPort:     "5433",
+		DBUser:     "postgres",
+		DBPassword: "postgres",
+		DBName:     "postgres",
+	}
+
+	db, err := bootstrap.DBConnect(cfg)
+	require.NoError(t, err)
+	defer db.Close()
+
+	repo := New(db)
+
+	// Create user
+	user := entity.User{
+		Name:      uuid.NewString(),
+		Password:  uuid.NewString(),
+		Email:     uuid.NewString(),
+		CreatedAt: time.Now().UTC().Round(time.Millisecond),
+	}
+
+	user, err = repo.CreateUser(user)
+	require.NoError(t, err)
+
+	actualProject := entity.Project{
+		Name:      uuid.NewString(),
+		UserID:    user.ID,
+		CreatedAt: time.Now().UTC().Round(time.Millisecond),
+	}
+
+	actualProject, err = repo.CreateProject(actualProject)
+	require.NoError(t, err)
+
+	actualTask := entity.Task{
+		Name:      uuid.NewString(),
+		UserID:    user.ID,
+		ProjectID: actualProject.ID,
+		CreatedAt: time.Now().UTC().Round(time.Millisecond),
+	}
+
+	actualTask, err = repo.CreateTask(actualTask)
+	require.NoError(t, err)
+
+	expectedTask, err := repo.TaskByID(actualTask.ID)
+	require.NoError(t, err)
+	require.Equal(t, expectedTask, actualTask)
+
+	_, err = repo.TaskByID(time.Now().UnixNano())
+	require.ErrorIs(t, err, entity.ErrNotFound)
+
+	db.Close()
+
+	_, err = repo.CreateTask(entity.Task{})
+	require.Error(t, err)
+
+	_, err = repo.TaskByID(time.Now().UnixNano())
+	require.Error(t, err)
+}
