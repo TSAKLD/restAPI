@@ -182,7 +182,7 @@ func (h *Handler) ProjectByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
-	qID := r.PathValue("project_id")
+	qID := r.PathValue("id")
 	projectID, err := strconv.ParseInt(qID, 10, 64)
 	if err != nil {
 		sendError(w, err)
