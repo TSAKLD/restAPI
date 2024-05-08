@@ -33,9 +33,9 @@ func (s *Server) setRoutes() {
 
 	// project routes
 	s.router.HandleFunc("POST /projects", s.h.CreateProject)
-	s.router.HandleFunc("POST /projects", s.h.DeleteProject)
-	s.router.HandleFunc("GET /projects/{owner_id}", s.h.Projects)
-	s.router.HandleFunc("POST /projects", s.h.ProjectByID)
+	s.router.HandleFunc("POST /projects/{id}", s.h.DeleteProject)
+	s.router.HandleFunc("GET /projects", s.h.UserProjects)
+	s.router.HandleFunc("GET /projects/{id}", s.h.ProjectByID)
 	//s.router.HandleFunc("POST /projects", s.h.EditProject)
 
 	// task routes

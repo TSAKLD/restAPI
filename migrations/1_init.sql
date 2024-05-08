@@ -1,3 +1,4 @@
+-- +goose Up
 CREATE TABLE users
 (
     id         BIGSERIAL PRIMARY KEY,
@@ -8,7 +9,7 @@ CREATE TABLE users
 );
 
 CREATE TABLE sessions(
-    id BIGSERIAL PRIMARY KEY,
+    id uuid PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL
 );
@@ -18,4 +19,9 @@ CREATE TABLE projects(
     name TEXT NOT NULL,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     created_at timestamptz NOT NULL
-)
+);
+
+-- +goose Down
+DROP TABLE projects;
+DROP TABLE sessions;
+DROP TABLE users;

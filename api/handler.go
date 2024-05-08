@@ -111,6 +111,14 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
+	var project entity.Project
+
+	err := json.NewDecoder(r.Body).Decode(&project)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
 	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		sendError(w, err)
@@ -123,11 +131,7 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project := entity.Project{
-		Name:      "",
-		UserID:    user.ID,
-		CreatedAt: time.Now(),
-	}
+	project.UserID = user.ID
 
 	project, err = h.us.CreateProject(project)
 	if err != nil {
@@ -138,15 +142,20 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
 	sendResponse(w, project)
 }
 
-func (h *Handler) Projects(w http.ResponseWriter, r *http.Request) {
-	qID := r.PathValue("owner_id")
-	userID, err := strconv.ParseInt(qID, 10, 64)
+func (h *Handler) UserProjects(w http.ResponseWriter, r *http.Request) {
+	cookie, err := r.Cookie("session_id")
 	if err != nil {
 		sendError(w, err)
 		return
 	}
 
-	projects, err := h.us.Projects(userID)
+	user, err := h.us.UserBySessionID(cookie.Value)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	projects, err := h.us.UserProjects(user.ID)
 	if err != nil {
 		sendError(w, err)
 		return
@@ -156,7 +165,20 @@ func (h *Handler) Projects(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ProjectByID(w http.ResponseWriter, r *http.Request) {
+	qID := r.PathValue("id")
+	projectID, err := strconv.ParseInt(qID, 10, 64)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
 
+	project, err := h.us.ProjectByID(projectID)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	sendResponse(w, project)
 }
 
 func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {

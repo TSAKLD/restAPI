@@ -92,12 +92,14 @@ func (us *UserService) Login(email string, password string) (uuid.UUID, error) {
 }
 
 func (us *UserService) UserBySessionID(sessionID string) (entity.User, error) {
-	return entity.User{}, nil
+	return us.repo.UserBySessionID(sessionID)
 }
 
 // project manipulations
 
 func (us *UserService) CreateProject(project entity.Project) (entity.Project, error) {
+	project.CreatedAt = time.Now()
+
 	project, err := us.repo.CreateProject(project)
 	if err != nil {
 		return entity.Project{}, err
@@ -115,7 +117,7 @@ func (us *UserService) ProjectByID(id int64) (entity.Project, error) {
 	return project, nil
 }
 
-func (us *UserService) Projects(ownerID int64) ([]entity.Project, error) {
+func (us *UserService) UserProjects(ownerID int64) ([]entity.Project, error) {
 	return us.repo.UserProjects(ownerID)
 }
 

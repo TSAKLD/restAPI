@@ -135,7 +135,7 @@ func (r *Repository) UserBySessionID(sessionID string) (u entity.User, err error
 }
 
 func (r *Repository) CreateProject(project entity.Project) (entity.Project, error) {
-	q := "INSERT INTO project(name, user_id, created_at) VALUES($1, $2, $3) RETURNING id"
+	q := "INSERT INTO projects(name, user_id, created_at) VALUES($1, $2, $3) RETURNING id"
 
 	err := r.db.QueryRow(q, project.Name, project.UserID, project.CreatedAt).Scan(&project.ID)
 	if err != nil {
@@ -169,9 +169,9 @@ func (r *Repository) UserProjects(userID int64) (projects []entity.Project, err 
 }
 
 func (r *Repository) ProjectByID(id int64) (p entity.Project, err error) {
-	q := "SELECT id, name, user_id, created_at FROM users WHERE id = $1"
+	q := "SELECT id, name, user_id, created_at FROM projects WHERE id = $1"
 
-	err = r.db.QueryRow(q, id).Scan(&p.ID, &p.Name, &p.UserID, p.CreatedAt)
+	err = r.db.QueryRow(q, id).Scan(&p.ID, &p.Name, &p.UserID, &p.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.Project{}, entity.ErrNotFound
