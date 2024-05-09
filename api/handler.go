@@ -122,6 +122,7 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("We are inside 2")
 	var project entity.Project
 
 	ctx := r.Context()
@@ -159,7 +160,7 @@ func (h *Handler) ProjectByID(w http.ResponseWriter, r *http.Request) {
 	qID := r.PathValue("id")
 	projectID, err := strconv.ParseInt(qID, 10, 64)
 	if err != nil {
-		sendError(w, err)
+		sendError(w, errors.New("'id' must be an integer"))
 		return
 	}
 
@@ -178,7 +179,7 @@ func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
 	qID := r.PathValue("id")
 	projectID, err := strconv.ParseInt(qID, 10, 64)
 	if err != nil {
-		sendError(w, err)
+		sendError(w, errors.New("'id' must be an integer"))
 		return
 	}
 
@@ -217,7 +218,7 @@ func (h *Handler) TaskByID(w http.ResponseWriter, r *http.Request) {
 	qID := r.PathValue("id")
 	id, err := strconv.ParseInt(qID, 10, 64)
 	if err != nil {
-		sendError(w, err)
+		sendError(w, errors.New("'id' must be an integer"))
 		return
 	}
 
@@ -242,4 +243,34 @@ func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
 	}
 
 	fmt.Fprint(w, "Verification Completed")
+}
+
+func (h *Handler) ProjectTasks(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	qID := r.PathValue("project_id")
+
+	projectID, err := strconv.ParseInt(qID, 10, 64)
+	if err != nil {
+
+	}
+
+	tasks, err := h.us.ProjectTasks(ctx, projectID)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	sendResponse(w, tasks)
+}
+
+func (h *Handler) UserTasks(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	tasks, err := h.us.UserTasks(ctx)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	sendResponse(w, tasks)
 }

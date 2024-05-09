@@ -44,6 +44,8 @@ func (s *Server) setRoutes() {
 	// task routes
 	s.router.Handle("POST /tasks", s.mw.Auth(s.h.CreateTask))
 	s.router.Handle("GET /tasks/{id}", s.mw.Auth(s.h.TaskByID))
+	s.router.Handle("GET /projects/{project_id}/tasks", s.mw.Auth(s.h.ProjectTasks))
+	s.router.Handle("GET /tasks", s.mw.Auth(s.h.UserTasks))
 }
 
 func (s *Server) Start() error {

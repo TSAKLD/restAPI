@@ -121,9 +121,9 @@ func (r *Repository) CreateSession(ctx context.Context, sessionID uuid.UUID, use
 }
 
 func (r *Repository) UserBySessionID(ctx context.Context, sessionID string) (u entity.User, err error) {
-	q := "SELECT u.id, u.email, u.name, u.created_at u.is_verified FROM users u JOIN sessions s ON u.id = s.user_id WHERE s.id = $1"
+	q := "SELECT u.id, u.email, u.name, u.created_at, u.is_verified FROM users u JOIN sessions s ON u.id = s.user_id WHERE s.id = $1"
 
-	err = r.db.QueryRowContext(ctx, q, sessionID).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt, &u.IsVerified)
+	err = r.db.QueryRowContext(ctx, q, sessionID).Scan(&u.ID, &u.Email, &u.Name, &u.CreatedAt, &u.IsVerified)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.User{}, entity.ErrNotFound
@@ -242,4 +242,50 @@ func (r *Repository) Verify(ctx context.Context, code string) error {
 
 	_, err = r.db.ExecContext(ctx, q, id)
 	return err
+}
+
+func (r *Repository) ProjectTasks(ctx context.Context, projectID int64) (tasks []entity.Task, err error) {
+	q := "SELECT id, name, project_id, user_id, created_at FROM tasks WHERE project_id = $1"
+
+	rows, err := r.db.QueryContext(ctx, q, projectID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var task entity.Task
+
+		err = rows.Scan(&task.ID, &task.Name, &task.ProjectID, &task.UserID, &task.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		tasks = append(tasks, task)
+	}
+
+	return tasks, nil
+}
+
+func (r *Repository) UserTasks(ctx context.Context, userID int64) (tasks []entity.Task, err error) {
+	q := "	SELECT id, name, project_id, user_id, created_at FROM tasks WHERE user_id = $1"
+
+	rows, err := r.db.QueryContext(ctx, q, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var task entity.Task
+
+		err = rows.Scan(&task.ID, &task.Name, &task.ProjectID, &task.UserID, &task.CreatedAt)
+		if err != nil {
+			return nil, err
+		}
+
+		tasks = append(tasks, task)
+	}
+
+	return tasks, nil
 }

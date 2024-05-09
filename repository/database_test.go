@@ -250,11 +250,58 @@ func TestRepository_CreateTask(t *testing.T) {
 	_, err = repo.TaskByID(Emptyctx, time.Now().UnixNano())
 	require.ErrorIs(t, err, entity.ErrNotFound)
 
+	////////////////////////
+
+	user2 := entity.User{
+		Name:      uuid.NewString(),
+		Password:  uuid.NewString(),
+		Email:     uuid.NewString(),
+		CreatedAt: time.Now().UTC().Round(time.Millisecond),
+	}
+
+	user2, err = repo.CreateUser(Emptyctx, user2)
+	require.NoError(t, err)
+
+	actualProject2 := entity.Project{
+		Name:      uuid.NewString(),
+		UserID:    user2.ID,
+		CreatedAt: time.Now().UTC().Round(time.Millisecond),
+	}
+
+	actualProject2, err = repo.CreateProject(Emptyctx, actualProject2)
+	require.NoError(t, err)
+
+	actualTask2 := entity.Task{
+		Name:      uuid.NewString(),
+		UserID:    user2.ID,
+		ProjectID: actualProject2.ID,
+		CreatedAt: time.Now().UTC().Round(time.Millisecond),
+	}
+
+	actualTask2, err = repo.CreateTask(Emptyctx, actualTask2)
+	require.NoError(t, err)
+
+	actualTasks, err := repo.ProjectTasks(Emptyctx, actualProject.ID)
+	require.NoError(t, err)
+	require.Contains(t, actualTasks, actualTask)
+	require.NotContains(t, actualTasks, actualTask2)
+
+	actualTasks, err = repo.UserTasks(Emptyctx, user.ID)
+	require.NoError(t, err)
+	require.Contains(t, actualTasks, actualTask)
+	require.NotContains(t, actualTasks, actualTask2)
+
 	db.Close()
 
 	_, err = repo.CreateTask(Emptyctx, entity.Task{})
 	require.Error(t, err)
 
 	_, err = repo.TaskByID(Emptyctx, time.Now().UnixNano())
+	require.Error(t, err)
+
+	_, err = repo.ProjectTasks(Emptyctx, time.Now().UnixNano())
+	require.Error(t, err)
+
+	_, err = repo.UserTasks(Emptyctx, time.Now().UnixNano())
 	require.Error(t, err)
 }

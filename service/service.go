@@ -177,7 +177,7 @@ func (us *UserService) CreateTask(ctx context.Context, cTask entity.TaskToCreate
 	user := entity.AuthUser(ctx)
 
 	if project.UserID != user.ID {
-		return entity.Task{}, fmt.Errorf("%w: not your task", entity.ErrForbidden)
+		return entity.Task{}, fmt.Errorf("%w: not your project", entity.ErrForbidden)
 	}
 
 	task := entity.Task{
@@ -228,4 +228,35 @@ func (us *UserService) SendVerificationLink(ctx context.Context, code string, em
 
 func (us *UserService) Verify(ctx context.Context, code string) error {
 	return us.repo.Verify(ctx, code)
+}
+
+func (us *UserService) ProjectTasks(ctx context.Context, projectID int64) ([]entity.Task, error) {
+	project, err := us.repo.ProjectByID(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	user := entity.AuthUser(ctx)
+
+	if project.UserID != user.ID {
+		return []entity.Task{}, fmt.Errorf("%w: not your project", entity.ErrForbidden)
+	}
+
+	tasks, err := us.repo.ProjectTasks(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
+}
+
+func (us *UserService) UserTasks(ctx context.Context) ([]entity.Task, error) {
+	user := entity.AuthUser(ctx)
+
+	tasks, err := us.repo.UserTasks(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	return tasks, nil
 }
