@@ -30,6 +30,7 @@ func (s *Server) setRoutes() {
 	//s.router.HandleFunc("DELETE /users/{id}", s.h.EditUser)
 	s.router.HandleFunc("GET /users/{id}", s.h.UserByID)
 	s.router.HandleFunc("GET /users", s.h.Users)
+	s.router.HandleFunc("GET /users/verify", s.h.Verify)
 
 	s.router.HandleFunc("POST /signin", s.h.SignIn)
 

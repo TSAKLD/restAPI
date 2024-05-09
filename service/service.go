@@ -1,10 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"net/http"
 	"restAPI/entity"
 	"restAPI/repository"
 	"time"
@@ -23,7 +26,7 @@ func New(repo *repository.Repository) *UserService {
 func (us *UserService) RegisterUser(ctx context.Context, user entity.User) (entity.User, error) {
 	_, err := us.repo.UserByEmail(ctx, user.Email)
 	if err == nil {
-		return entity.User{}, errors.New("email %v already exist")
+		return entity.User{}, fmt.Errorf("email %s already exist", user.Email)
 	}
 
 	user.CreatedAt = time.Now()
@@ -34,6 +37,19 @@ func (us *UserService) RegisterUser(ctx context.Context, user entity.User) (enti
 	}
 
 	user.Password = ""
+	/////
+
+	code := uuid.NewString()
+
+	err = us.repo.SaveVerificationCode(ctx, code, user.ID)
+	if err != nil {
+		return entity.User{}, err
+	}
+
+	err = us.SendVerificationLink(ctx, code, user.Email)
+	if err != nil {
+		return entity.User{}, err
+	}
 
 	return user, nil
 }
@@ -187,4 +203,29 @@ func (us *UserService) TaskByID(ctx context.Context, id int64) (entity.Task, err
 	}
 
 	return task, nil
+}
+
+func (us *UserService) SendVerificationLink(ctx context.Context, code string, email string) error {
+	message := map[string]interface{}{
+		"subject":  "Verification",
+		"receiver": email,
+		"message":  fmt.Sprintf("Your Verification link is:http://localhost:8080/users/verify?code=%s", code),
+	}
+
+	bytesRepresentation, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+
+	response, err := http.Post("http://localhost:8090/mail", "application/json", bytes.NewBuffer(bytesRepresentation))
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	return nil
+}
+
+func (us *UserService) Verify(ctx context.Context, code string) error {
+	return us.repo.Verify(ctx, code)
 }

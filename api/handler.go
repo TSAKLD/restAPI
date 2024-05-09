@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"restAPI/entity"
 	"restAPI/service"
@@ -227,4 +228,18 @@ func (h *Handler) TaskByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendResponse(w, task)
+}
+
+func (h *Handler) Verify(w http.ResponseWriter, r *http.Request) {
+	code := r.URL.Query().Get("code")
+
+	ctx := r.Context()
+
+	err := h.us.Verify(ctx, code)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	fmt.Fprint(w, "Verification Completed")
 }

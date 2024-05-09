@@ -28,10 +28,11 @@ func TestRepository_CreateUser(t *testing.T) {
 	repo := New(db)
 
 	user := entity.User{
-		Name:      uuid.NewString(),
-		Password:  uuid.NewString(),
-		Email:     uuid.NewString(),
-		CreatedAt: time.Now().UTC().Round(time.Millisecond),
+		Name:       uuid.NewString(),
+		Password:   uuid.NewString(),
+		Email:      uuid.NewString(),
+		CreatedAt:  time.Now().UTC().Round(time.Millisecond),
+		IsVerified: true,
 	}
 	// Create user
 	user, err = repo.CreateUser(Emptyctx, user)
