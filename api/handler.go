@@ -113,6 +113,8 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
 	var project entity.Project
 
+	ctx := r.Context()
+
 	err := json.NewDecoder(r.Body).Decode(&project)
 	if err != nil {
 		sendError(w, err)
@@ -133,7 +135,7 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
 
 	project.UserID = user.ID
 
-	project, err = h.us.CreateProject(project)
+	project, err = h.us.CreateProject(ctx, project)
 	if err != nil {
 		sendError(w, err)
 		return

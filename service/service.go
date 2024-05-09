@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
@@ -97,10 +98,10 @@ func (us *UserService) UserBySessionID(sessionID string) (entity.User, error) {
 
 // project manipulations
 
-func (us *UserService) CreateProject(project entity.Project) (entity.Project, error) {
+func (us *UserService) CreateProject(ctx context.Context, project entity.Project) (entity.Project, error) {
 	project.CreatedAt = time.Now()
 
-	project, err := us.repo.CreateProject(project)
+	project, err := us.repo.CreateProject(ctx, project)
 	if err != nil {
 		return entity.Project{}, err
 	}

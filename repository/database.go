@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"errors"
 	"github.com/google/uuid"
@@ -134,10 +135,10 @@ func (r *Repository) UserBySessionID(sessionID string) (u entity.User, err error
 	return u, nil
 }
 
-func (r *Repository) CreateProject(project entity.Project) (entity.Project, error) {
+func (r *Repository) CreateProject(ctx context.Context, project entity.Project) (entity.Project, error) {
 	q := "INSERT INTO projects(name, user_id, created_at) VALUES($1, $2, $3) RETURNING id"
 
-	err := r.db.QueryRow(q, project.Name, project.UserID, project.CreatedAt).Scan(&project.ID)
+	err := r.db.QueryRowContext(ctx, q, project.Name, project.UserID, project.CreatedAt).Scan(&project.ID)
 	if err != nil {
 		return entity.Project{}, err
 	}
