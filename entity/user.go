@@ -1,6 +1,9 @@
 package entity
 
-import "time"
+import (
+	"context"
+	"time"
+)
 
 type User struct {
 	ID        int64     `json:"id"`
@@ -8,4 +11,8 @@ type User struct {
 	Password  string    `json:"password,omitempty"`
 	Email     string    `json:"email"`
 	CreatedAt time.Time `json:"created_at"`
+}
+
+func AuthUser(ctx context.Context) User {
+	return ctx.Value("user").(User)
 }

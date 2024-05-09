@@ -99,6 +99,9 @@ func (us *UserService) UserBySessionID(sessionID string) (entity.User, error) {
 // project manipulations
 
 func (us *UserService) CreateProject(ctx context.Context, project entity.Project) (entity.Project, error) {
+	user := entity.AuthUser(ctx)
+
+	project.UserID = user.ID
 	project.CreatedAt = time.Now()
 
 	project, err := us.repo.CreateProject(ctx, project)

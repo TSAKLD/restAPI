@@ -32,8 +32,9 @@ func main() {
 	us := service.New(repo)
 
 	hdr := api.NewHandler(us)
+	mw := api.NewMiddleware(us)
 
-	server := api.NewServer(hdr, cfg.HTTPPort)
+	server := api.NewServer(hdr, cfg.HTTPPort, mw)
 
 	err = server.Start()
 	if err != nil {

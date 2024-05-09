@@ -121,20 +121,6 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		sendError(w, err)
-		return
-	}
-
-	user, err := h.us.UserBySessionID(cookie.Value)
-	if err != nil {
-		sendError(w, err)
-		return
-	}
-
-	project.UserID = user.ID
-
 	project, err = h.us.CreateProject(ctx, project)
 	if err != nil {
 		sendError(w, err)

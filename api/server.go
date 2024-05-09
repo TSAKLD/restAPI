@@ -9,14 +9,16 @@ type Server struct {
 	port   string
 	router *http.ServeMux
 	h      *Handler
+	mw     *Middleware
 }
 
 // NewServer returns http router to work with.
-func NewServer(h *Handler, port string) *Server {
+func NewServer(h *Handler, port string, mw *Middleware) *Server {
 	return &Server{
 		port:   port,
 		router: http.NewServeMux(),
 		h:      h,
+		mw:     mw,
 	}
 }
 
@@ -32,7 +34,7 @@ func (s *Server) setRoutes() {
 	s.router.HandleFunc("POST /signin", s.h.SignIn)
 
 	// project routes
-	s.router.HandleFunc("POST /projects", s.h.CreateProject)
+	s.router.Handle("POST /projects", s.mw.Auth(s.h.CreateProject))
 	s.router.HandleFunc("DELETE /projects/{id}", s.h.DeleteProject)
 	s.router.HandleFunc("GET /projects", s.h.UserProjects)
 	s.router.HandleFunc("GET /projects/{id}", s.h.ProjectByID)
@@ -48,5 +50,5 @@ func (s *Server) Start() error {
 
 	fmt.Println("Server is listening... at post:", s.port)
 
-	return http.ListenAndServe(":"+s.port, s.router)
+	return http.ListenAndServe(":"+s.port, s.mw.Log(s.router))
 }
