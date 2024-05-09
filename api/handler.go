@@ -19,6 +19,8 @@ func NewHandler(userService *service.UserService) *Handler {
 }
 
 func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var user entity.User
 
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -27,7 +29,7 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err = h.us.RegisterUser(user)
+	user, err = h.us.RegisterUser(ctx, user)
 	if err != nil {
 		sendError(w, err)
 		return
@@ -37,6 +39,8 @@ func (h *Handler) CreateUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	qID := r.PathValue("id")
 
 	id, err := strconv.ParseInt(qID, 10, 64)
@@ -45,7 +49,7 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = h.us.DeleteUser(id)
+	err = h.us.DeleteUser(ctx, id)
 	if err != nil {
 		sendError(w, err)
 		return
@@ -55,6 +59,8 @@ func (h *Handler) DeleteUser(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UserByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	qID := r.PathValue("id")
 
 	id, err := strconv.ParseInt(qID, 10, 64)
@@ -63,7 +69,7 @@ func (h *Handler) UserByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	user, err := h.us.UserByID(id)
+	user, err := h.us.UserByID(ctx, id)
 	if err != nil {
 		sendError(w, err)
 		return
@@ -72,8 +78,10 @@ func (h *Handler) UserByID(w http.ResponseWriter, r *http.Request) {
 	sendResponse(w, user)
 }
 
-func (h *Handler) Users(w http.ResponseWriter, _ *http.Request) {
-	users, err := h.us.Users()
+func (h *Handler) Users(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
+	users, err := h.us.Users(ctx)
 	if err != nil {
 		sendError(w, err)
 		return
@@ -83,6 +91,8 @@ func (h *Handler) Users(w http.ResponseWriter, _ *http.Request) {
 }
 
 func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	var user entity.User
 
 	err := json.NewDecoder(r.Body).Decode(&user)
@@ -91,7 +101,7 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	sessionID, err := h.us.Login(user.Email, user.Password)
+	sessionID, err := h.us.Login(ctx, user.Email, user.Password)
 	if err != nil {
 		sendError(w, err)
 		return
@@ -131,19 +141,9 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) UserProjects(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		sendError(w, err)
-		return
-	}
+	ctx := r.Context()
 
-	user, err := h.us.UserBySessionID(cookie.Value)
-	if err != nil {
-		sendError(w, err)
-		return
-	}
-
-	projects, err := h.us.UserProjects(user.ID)
+	projects, err := h.us.UserProjects(ctx)
 	if err != nil {
 		sendError(w, err)
 		return
@@ -153,6 +153,8 @@ func (h *Handler) UserProjects(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) ProjectByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	qID := r.PathValue("id")
 	projectID, err := strconv.ParseInt(qID, 10, 64)
 	if err != nil {
@@ -160,7 +162,7 @@ func (h *Handler) ProjectByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	project, err := h.us.ProjectByID(projectID)
+	project, err := h.us.ProjectByID(ctx, projectID)
 	if err != nil {
 		sendError(w, err)
 		return
@@ -170,6 +172,8 @@ func (h *Handler) ProjectByID(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	qID := r.PathValue("id")
 	projectID, err := strconv.ParseInt(qID, 10, 64)
 	if err != nil {
@@ -177,19 +181,7 @@ func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	cookie, err := r.Cookie("session_id")
-	if err != nil {
-		sendError(w, err)
-		return
-	}
-
-	user, err := h.us.UserBySessionID(cookie.Value)
-	if err != nil {
-		sendError(w, err)
-		return
-	}
-
-	err = h.us.DeleteProject(user.ID, projectID)
+	err = h.us.DeleteProject(ctx, projectID)
 	if err != nil {
 		sendError(w, err)
 		return
@@ -199,27 +191,17 @@ func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateTask(w http.ResponseWriter, r *http.Request) {
-	cookie, err := r.Cookie("session_id")
+	ctx := r.Context()
+
+	cTask := entity.TaskToCreate{}
+
+	err := json.NewDecoder(r.Body).Decode(&cTask)
 	if err != nil {
 		sendError(w, err)
 		return
 	}
 
-	user, err := h.us.UserBySessionID(cookie.Value)
-	if err != nil {
-		sendError(w, err)
-		return
-	}
-
-	cTask := entity.TaskToCreate{UserID: user.ID}
-
-	err = json.NewDecoder(r.Body).Decode(&cTask)
-	if err != nil {
-		sendError(w, err)
-		return
-	}
-
-	task, err := h.us.CreateTask(cTask)
+	task, err := h.us.CreateTask(ctx, cTask)
 	if err != nil {
 		sendError(w, err)
 		return
@@ -229,6 +211,8 @@ func (h *Handler) CreateTask(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) TaskByID(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+
 	qID := r.PathValue("id")
 	id, err := strconv.ParseInt(qID, 10, 64)
 	if err != nil {
@@ -236,7 +220,7 @@ func (h *Handler) TaskByID(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	task, err := h.us.TaskByID(id)
+	task, err := h.us.TaskByID(ctx, id)
 	if err != nil {
 		sendError(w, err)
 		return

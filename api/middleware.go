@@ -31,7 +31,7 @@ func (mw *Middleware) Auth(next http.HandlerFunc) http.Handler {
 			return
 		}
 
-		user, err := mw.us.UserBySessionID(cookie.Value)
+		user, err := mw.us.UserBySessionID(context.Background(), cookie.Value)
 		if err != nil {
 			sendError(w, err)
 			return

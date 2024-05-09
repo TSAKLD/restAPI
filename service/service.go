@@ -20,15 +20,15 @@ func New(repo *repository.Repository) *UserService {
 
 // user manipulations
 
-func (us *UserService) RegisterUser(user entity.User) (entity.User, error) {
-	_, err := us.repo.UserByEmail(user.Email)
+func (us *UserService) RegisterUser(ctx context.Context, user entity.User) (entity.User, error) {
+	_, err := us.repo.UserByEmail(ctx, user.Email)
 	if err == nil {
 		return entity.User{}, errors.New("email %v already exist")
 	}
 
 	user.CreatedAt = time.Now()
 
-	user, err = us.repo.CreateUser(user)
+	user, err = us.repo.CreateUser(ctx, user)
 	if err != nil {
 		return entity.User{}, err
 	}
@@ -38,8 +38,8 @@ func (us *UserService) RegisterUser(user entity.User) (entity.User, error) {
 	return user, nil
 }
 
-func (us *UserService) UserByID(id int64) (entity.User, error) {
-	user, err := us.repo.UserByID(id)
+func (us *UserService) UserByID(ctx context.Context, id int64) (entity.User, error) {
+	user, err := us.repo.UserByID(ctx, id)
 	if err != nil {
 		return entity.User{}, err
 	}
@@ -47,13 +47,13 @@ func (us *UserService) UserByID(id int64) (entity.User, error) {
 	return user, nil
 }
 
-func (us *UserService) DeleteUser(id int64) error {
-	_, err := us.repo.UserByID(id)
+func (us *UserService) DeleteUser(ctx context.Context, id int64) error {
+	_, err := us.repo.UserByID(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	err = us.repo.DeleteUser(id)
+	err = us.repo.DeleteUser(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -61,8 +61,8 @@ func (us *UserService) DeleteUser(id int64) error {
 	return nil
 }
 
-func (us *UserService) Users() ([]entity.User, error) {
-	users, err := us.repo.Users()
+func (us *UserService) Users(ctx context.Context) ([]entity.User, error) {
+	users, err := us.repo.Users(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -70,8 +70,8 @@ func (us *UserService) Users() ([]entity.User, error) {
 	return users, nil
 }
 
-func (us *UserService) Login(email string, password string) (uuid.UUID, error) {
-	user, err := us.repo.UserByEmailAndPassword(email, password)
+func (us *UserService) Login(ctx context.Context, email string, password string) (uuid.UUID, error) {
+	user, err := us.repo.UserByEmailAndPassword(ctx, email, password)
 	if err != nil {
 		if errors.Is(err, entity.ErrNotFound) {
 			return uuid.UUID{}, entity.ErrUnauthorized
@@ -84,7 +84,7 @@ func (us *UserService) Login(email string, password string) (uuid.UUID, error) {
 
 	createdAt := time.Now()
 
-	err = us.repo.CreateSession(sessionID, user.ID, createdAt)
+	err = us.repo.CreateSession(ctx, sessionID, user.ID, createdAt)
 	if err != nil {
 		return uuid.UUID{}, err
 	}
@@ -92,8 +92,8 @@ func (us *UserService) Login(email string, password string) (uuid.UUID, error) {
 	return sessionID, nil
 }
 
-func (us *UserService) UserBySessionID(sessionID string) (entity.User, error) {
-	return us.repo.UserBySessionID(sessionID)
+func (us *UserService) UserBySessionID(ctx context.Context, sessionID string) (entity.User, error) {
+	return us.repo.UserBySessionID(ctx, sessionID)
 }
 
 // project manipulations
@@ -112,30 +112,39 @@ func (us *UserService) CreateProject(ctx context.Context, project entity.Project
 	return project, nil
 }
 
-func (us *UserService) ProjectByID(id int64) (entity.Project, error) {
-	project, err := us.repo.ProjectByID(id)
+func (us *UserService) ProjectByID(ctx context.Context, id int64) (entity.Project, error) {
+	user := entity.AuthUser(ctx)
+
+	project, err := us.repo.ProjectByID(ctx, id)
 	if err != nil {
 		return entity.Project{}, err
+	}
+
+	if user.ID != project.UserID {
+		return entity.Project{}, fmt.Errorf("%w: not your project", entity.ErrForbidden)
 	}
 
 	return project, nil
 }
 
-func (us *UserService) UserProjects(ownerID int64) ([]entity.Project, error) {
-	return us.repo.UserProjects(ownerID)
+func (us *UserService) UserProjects(ctx context.Context) ([]entity.Project, error) {
+	user := entity.AuthUser(ctx)
+	return us.repo.UserProjects(ctx, user.ID)
 }
 
-func (us *UserService) DeleteProject(ownerID int64, projectID int64) error {
-	project, err := us.repo.ProjectByID(projectID)
+func (us *UserService) DeleteProject(ctx context.Context, projectID int64) error {
+	user := entity.AuthUser(ctx)
+
+	project, err := us.repo.ProjectByID(ctx, projectID)
 	if err != nil {
 		return err
 	}
 
-	if ownerID != project.UserID {
+	if user.ID != project.UserID {
 		return fmt.Errorf("%w: not your project", entity.ErrForbidden)
 	}
 
-	err = us.repo.DeleteProject(projectID)
+	err = us.repo.DeleteProject(ctx, projectID)
 	if err != nil {
 		return err
 	}
@@ -143,26 +152,39 @@ func (us *UserService) DeleteProject(ownerID int64, projectID int64) error {
 	return nil
 }
 
-func (us *UserService) CreateTask(cTask entity.TaskToCreate) (entity.Task, error) {
-	task := entity.Task{
-		Name:      cTask.Name,
-		UserID:    cTask.UserID,
-		ProjectID: cTask.ProjectID,
-		CreatedAt: time.Now(),
-	}
-
-	project, err := us.repo.ProjectByID(task.ProjectID)
+func (us *UserService) CreateTask(ctx context.Context, cTask entity.TaskToCreate) (entity.Task, error) {
+	project, err := us.repo.ProjectByID(ctx, cTask.ProjectID)
 	if err != nil {
 		return entity.Task{}, err
 	}
 
-	if project.UserID != task.UserID {
-		return entity.Task{}, fmt.Errorf("%w: not your project", entity.ErrForbidden)
+	user := entity.AuthUser(ctx)
+
+	if project.UserID != user.ID {
+		return entity.Task{}, fmt.Errorf("%w: not your task", entity.ErrForbidden)
 	}
 
-	return us.repo.CreateTask(task)
+	task := entity.Task{
+		Name:      cTask.Name,
+		UserID:    user.ID,
+		ProjectID: cTask.ProjectID,
+		CreatedAt: time.Now(),
+	}
+
+	return us.repo.CreateTask(ctx, task)
 }
 
-func (us *UserService) TaskByID(id int64) (entity.Task, error) {
-	return us.repo.TaskByID(id)
+func (us *UserService) TaskByID(ctx context.Context, id int64) (entity.Task, error) {
+	user := entity.AuthUser(ctx)
+
+	task, err := us.repo.TaskByID(ctx, id)
+	if err != nil {
+		return entity.Task{}, err
+	}
+
+	if user.ID != task.UserID {
+		return entity.Task{}, fmt.Errorf("%w: not your task", entity.ErrForbidden)
+	}
+
+	return task, nil
 }

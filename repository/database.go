@@ -19,10 +19,10 @@ func New(database *sql.DB) *Repository {
 	}
 }
 
-func (r *Repository) CreateUser(u entity.User) (entity.User, error) {
+func (r *Repository) CreateUser(ctx context.Context, u entity.User) (entity.User, error) {
 	q := "INSERT INTO users(name, password, email, created_at) VALUES ($1, $2, $3, $4) RETURNING id"
 
-	err := r.db.QueryRow(q, u.Name, u.Password, u.Email, u.CreatedAt).Scan(&u.ID)
+	err := r.db.QueryRowContext(ctx, q, u.Name, u.Password, u.Email, u.CreatedAt).Scan(&u.ID)
 	if err != nil {
 		return entity.User{}, err
 	}
@@ -30,10 +30,10 @@ func (r *Repository) CreateUser(u entity.User) (entity.User, error) {
 	return u, nil
 }
 
-func (r *Repository) DeleteUser(id int64) error {
+func (r *Repository) DeleteUser(ctx context.Context, id int64) error {
 	q := "DELETE FROM users WHERE id = $1"
 
-	_, err := r.db.Exec(q, id)
+	_, err := r.db.ExecContext(ctx, q, id)
 	if err != nil {
 		return err
 	}
@@ -41,10 +41,10 @@ func (r *Repository) DeleteUser(id int64) error {
 	return nil
 }
 
-func (r *Repository) UserByID(id int64) (u entity.User, err error) {
+func (r *Repository) UserByID(ctx context.Context, id int64) (u entity.User, err error) {
 	q := "SELECT id, name, email, created_at FROM users WHERE id = $1"
 
-	err = r.db.QueryRow(q, id).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
+	err = r.db.QueryRowContext(ctx, q, id).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.User{}, entity.ErrNotFound
@@ -56,10 +56,10 @@ func (r *Repository) UserByID(id int64) (u entity.User, err error) {
 	return u, nil
 }
 
-func (r *Repository) UserByEmail(email string) (u entity.User, err error) {
+func (r *Repository) UserByEmail(ctx context.Context, email string) (u entity.User, err error) {
 	q := "SELECT id, name, email, created_at FROM users WHERE email = $1"
 
-	err = r.db.QueryRow(q, email).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
+	err = r.db.QueryRowContext(ctx, q, email).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.User{}, entity.ErrNotFound
@@ -71,10 +71,10 @@ func (r *Repository) UserByEmail(email string) (u entity.User, err error) {
 	return u, nil
 }
 
-func (r *Repository) Users() (users []entity.User, err error) {
+func (r *Repository) Users(ctx context.Context) (users []entity.User, err error) {
 	q := "SELECT id, name, email, created_at FROM users"
 
-	rows, err := r.db.Query(q)
+	rows, err := r.db.QueryContext(ctx, q)
 	if err != nil {
 		return nil, err
 	}
@@ -94,10 +94,10 @@ func (r *Repository) Users() (users []entity.User, err error) {
 	return users, nil
 }
 
-func (r *Repository) UserByEmailAndPassword(email string, password string) (u entity.User, err error) {
+func (r *Repository) UserByEmailAndPassword(ctx context.Context, email string, password string) (u entity.User, err error) {
 	q := "SELECT id, name, email, created_at FROM users WHERE email = $1 AND password = $2"
 
-	err = r.db.QueryRow(q, email, password).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
+	err = r.db.QueryRowContext(ctx, q, email, password).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.User{}, entity.ErrNotFound
@@ -109,10 +109,10 @@ func (r *Repository) UserByEmailAndPassword(email string, password string) (u en
 	return u, nil
 }
 
-func (r *Repository) CreateSession(sessionID uuid.UUID, userID int64, createdAt time.Time) error {
+func (r *Repository) CreateSession(ctx context.Context, sessionID uuid.UUID, userID int64, createdAt time.Time) error {
 	q := "INSERT INTO sessions(id, user_id, created_at) VALUES($1, $2, $3)"
 
-	_, err := r.db.Exec(q, sessionID, userID, createdAt)
+	_, err := r.db.ExecContext(ctx, q, sessionID, userID, createdAt)
 	if err != nil {
 		return err
 	}
@@ -120,10 +120,10 @@ func (r *Repository) CreateSession(sessionID uuid.UUID, userID int64, createdAt 
 	return nil
 }
 
-func (r *Repository) UserBySessionID(sessionID string) (u entity.User, err error) {
+func (r *Repository) UserBySessionID(ctx context.Context, sessionID string) (u entity.User, err error) {
 	q := "SELECT u.id, u.email, u.name, u.created_at FROM users u JOIN sessions s ON u.id = s.user_id WHERE s.id = $1"
 
-	err = r.db.QueryRow(q, sessionID).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
+	err = r.db.QueryRowContext(ctx, q, sessionID).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.User{}, entity.ErrNotFound
@@ -146,10 +146,10 @@ func (r *Repository) CreateProject(ctx context.Context, project entity.Project) 
 	return project, nil
 }
 
-func (r *Repository) UserProjects(userID int64) (projects []entity.Project, err error) {
+func (r *Repository) UserProjects(ctx context.Context, userID int64) (projects []entity.Project, err error) {
 	q := "SELECT id, name, user_id, created_at FROM projects WHERE user_id = $1"
 
-	rows, err := r.db.Query(q, userID)
+	rows, err := r.db.QueryContext(ctx, q, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -169,10 +169,10 @@ func (r *Repository) UserProjects(userID int64) (projects []entity.Project, err 
 	return projects, nil
 }
 
-func (r *Repository) ProjectByID(id int64) (p entity.Project, err error) {
+func (r *Repository) ProjectByID(ctx context.Context, id int64) (p entity.Project, err error) {
 	q := "SELECT id, name, user_id, created_at FROM projects WHERE id = $1"
 
-	err = r.db.QueryRow(q, id).Scan(&p.ID, &p.Name, &p.UserID, &p.CreatedAt)
+	err = r.db.QueryRowContext(ctx, q, id).Scan(&p.ID, &p.Name, &p.UserID, &p.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.Project{}, entity.ErrNotFound
@@ -184,10 +184,10 @@ func (r *Repository) ProjectByID(id int64) (p entity.Project, err error) {
 	return p, nil
 }
 
-func (r *Repository) DeleteProject(projectID int64) error {
+func (r *Repository) DeleteProject(ctx context.Context, projectID int64) error {
 	q := "DELETE FROM projects WHERE id = $1"
 
-	_, err := r.db.Exec(q, projectID)
+	_, err := r.db.ExecContext(ctx, q, projectID)
 	if err != nil {
 		return err
 	}
@@ -195,10 +195,10 @@ func (r *Repository) DeleteProject(projectID int64) error {
 	return nil
 }
 
-func (r *Repository) CreateTask(t entity.Task) (entity.Task, error) {
+func (r *Repository) CreateTask(ctx context.Context, t entity.Task) (entity.Task, error) {
 	q := "INSERT INTO tasks (name, project_id, user_id, created_at) VALUES ($1, $2, $3, $4) RETURNING id"
 
-	err := r.db.QueryRow(q, t.Name, t.ProjectID, t.UserID, t.CreatedAt).Scan(&t.ID)
+	err := r.db.QueryRowContext(ctx, q, t.Name, t.ProjectID, t.UserID, t.CreatedAt).Scan(&t.ID)
 	if err != nil {
 		return entity.Task{}, err
 	}
@@ -206,10 +206,10 @@ func (r *Repository) CreateTask(t entity.Task) (entity.Task, error) {
 	return t, nil
 }
 
-func (r *Repository) TaskByID(id int64) (t entity.Task, err error) {
+func (r *Repository) TaskByID(ctx context.Context, id int64) (t entity.Task, err error) {
 	q := "SELECT id, name, project_id, user_id, created_at FROM tasks WHERE id = $1"
 
-	err = r.db.QueryRow(q, id).Scan(&t.ID, &t.Name, &t.ProjectID, &t.UserID, &t.CreatedAt)
+	err = r.db.QueryRowContext(ctx, q, id).Scan(&t.ID, &t.Name, &t.ProjectID, &t.UserID, &t.CreatedAt)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return entity.Task{}, entity.ErrNotFound

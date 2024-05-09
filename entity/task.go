@@ -13,5 +13,4 @@ type Task struct {
 type TaskToCreate struct {
 	Name      string `json:"name,omitempty"`
 	ProjectID int64  `json:"project_id,omitempty"`
-	UserID    int64
 }

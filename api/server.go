@@ -35,14 +35,14 @@ func (s *Server) setRoutes() {
 
 	// project routes
 	s.router.Handle("POST /projects", s.mw.Auth(s.h.CreateProject))
-	s.router.HandleFunc("DELETE /projects/{id}", s.h.DeleteProject)
-	s.router.HandleFunc("GET /projects", s.h.UserProjects)
-	s.router.HandleFunc("GET /projects/{id}", s.h.ProjectByID)
+	s.router.Handle("DELETE /projects/{id}", s.mw.Auth(s.h.DeleteProject))
+	s.router.Handle("GET /projects", s.mw.Auth(s.h.UserProjects))
+	s.router.Handle("GET /projects/{id}", s.mw.Auth(s.h.ProjectByID))
 	//s.router.HandleFunc("POST /projects", s.h.EditProject)
 
 	// task routes
-	s.router.HandleFunc("POST /tasks", s.h.CreateTask)
-	s.router.HandleFunc("GET /tasks/{id}", s.h.TaskByID)
+	s.router.Handle("POST /tasks", s.mw.Auth(s.h.CreateTask))
+	s.router.Handle("GET /tasks/{id}", s.mw.Auth(s.h.TaskByID))
 }
 
 func (s *Server) Start() error {
