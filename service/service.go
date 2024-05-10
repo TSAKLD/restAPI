@@ -227,7 +227,7 @@ func (us *UserService) SendVerificationLink(ctx context.Context, code string, em
 }
 
 func (us *UserService) Verify(ctx context.Context, code string) error {
-	return us.repo.Verify(ctx, code)
+	return us.repo.VerifyUser(ctx, code)
 }
 
 func (us *UserService) ProjectTasks(ctx context.Context, projectID int64) ([]entity.Task, error) {
