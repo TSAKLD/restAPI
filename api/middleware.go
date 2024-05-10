@@ -8,10 +8,10 @@ import (
 )
 
 type Middleware struct {
-	us *service.Service
+	us *service.ProjectService
 }
 
-func NewMiddleware(us *service.Service) *Middleware {
+func NewMiddleware(us *service.ProjectService) *Middleware {
 	return &Middleware{us: us}
 }
 

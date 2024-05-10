@@ -32,32 +32,6 @@ func (r *AuthRepository) UserByEmailAndPassword(ctx context.Context, email strin
 	return u, nil
 }
 
-func (r *AuthRepository) ProjectUsers(ctx context.Context, projectID int64) (users []entity.User, err error) {
-	q := `SELECT u.id, u.name, u.email, u.created_at, u.is_verified
-	FROM users u
-	    JOIN projects_users pu ON pu.user_id = u.id
-	WHERE pu.project_id = $1`
-
-	rows, err := r.db.QueryContext(ctx, q, projectID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-
-	for rows.Next() {
-		var user entity.User
-
-		err = rows.Scan(&user.ID, &user.Name, &user.Email, &user.CreatedAt, &user.IsVerified)
-		if err != nil {
-			return nil, err
-		}
-
-		users = append(users, user)
-	}
-
-	return users, nil
-}
-
 func (r *AuthRepository) CreateSession(ctx context.Context, sessionID uuid.UUID, userID int64, createdAt time.Time) error {
 	q := "INSERT INTO sessions(id, user_id, created_at) VALUES($1, $2, $3)"
 
