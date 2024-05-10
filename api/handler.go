@@ -1,21 +1,43 @@
 package api
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/google/uuid"
 	"net/http"
 	"restAPI/entity"
-	"restAPI/service"
 	"strconv"
 	"time"
 )
 
-type Handler struct {
-	us *service.UserService
+type UserService interface {
+	RegisterUser(ctx context.Context, user entity.User) (entity.User, error)
+	UserByID(ctx context.Context, id int64) (entity.User, error)
+	DeleteUser(ctx context.Context, id int64) error
+	Users(ctx context.Context) ([]entity.User, error)
+	Login(ctx context.Context, email string, password string) (uuid.UUID, error)
+	UserBySessionID(ctx context.Context, sessionID string) (entity.User, error)
+	CreateProject(ctx context.Context, project entity.Project) (entity.Project, error)
+	ProjectByID(ctx context.Context, id int64) (entity.Project, error)
+	UserProjects(ctx context.Context) ([]entity.Project, error)
+	DeleteProject(ctx context.Context, projectID int64) error
+	CreateTask(ctx context.Context, cTask entity.TaskToCreate) (entity.Task, error)
+	TaskByID(ctx context.Context, id int64) (entity.Task, error)
+	SendVerificationLink(ctx context.Context, code string, email string) error
+	Verify(ctx context.Context, code string) error
+	ProjectTasks(ctx context.Context, projectID int64) ([]entity.Task, error)
+	UserTasks(ctx context.Context) ([]entity.Task, error)
+	AddProjectMember(ctx context.Context, projectID int64, userID int64) error
+	ProjectUsers(ctx context.Context, projectID int64) ([]entity.User, error)
 }
 
-func NewHandler(userService *service.UserService) *Handler {
+type Handler struct {
+	us UserService
+}
+
+func NewHandler(userService UserService) *Handler {
 	return &Handler{us: userService}
 }
 

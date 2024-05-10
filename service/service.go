@@ -9,21 +9,43 @@ import (
 	"github.com/google/uuid"
 	"net/http"
 	"restAPI/entity"
-	"restAPI/repository"
 	"time"
 )
 
-type UserService struct {
-	repo *repository.Repository
+type Repository interface {
+	CreateUser(ctx context.Context, u entity.User) (entity.User, error)
+	DeleteUser(ctx context.Context, id int64) error
+	UserByID(ctx context.Context, id int64) (u entity.User, err error)
+	UserByEmail(ctx context.Context, email string) (u entity.User, err error)
+	Users(ctx context.Context) (users []entity.User, err error)
+	UserByEmailAndPassword(ctx context.Context, email string, password string) (u entity.User, err error)
+	ProjectUsers(ctx context.Context, projectID int64) (users []entity.User, err error)
+	CreateSession(ctx context.Context, sessionID uuid.UUID, userID int64, createdAt time.Time) error
+	UserBySessionID(ctx context.Context, sessionID string) (u entity.User, err error)
+	SaveVerificationCode(ctx context.Context, code string, userID int64) error
+	VerifyUser(ctx context.Context, code string) error
+	CreateProject(ctx context.Context, project entity.Project) (entity.Project, error)
+	UserProjects(ctx context.Context, userID int64) (projects []entity.Project, err error)
+	ProjectByID(ctx context.Context, id int64) (p entity.Project, err error)
+	DeleteProject(ctx context.Context, projectID int64) error
+	AddProjectMember(ctx context.Context, projectID int64, userID int64) error
+	CreateTask(ctx context.Context, t entity.Task) (entity.Task, error)
+	TaskByID(ctx context.Context, id int64) (t entity.Task, err error)
+	ProjectTasks(ctx context.Context, projectID int64) (tasks []entity.Task, err error)
+	UserTasks(ctx context.Context, userID int64) (tasks []entity.Task, err error)
 }
 
-func New(repo *repository.Repository) *UserService {
-	return &UserService{repo: repo}
+type Service struct {
+	repo Repository
+}
+
+func New(repo Repository) *Service {
+	return &Service{repo: repo}
 }
 
 // user manipulations
 
-func (us *UserService) RegisterUser(ctx context.Context, user entity.User) (entity.User, error) {
+func (us *Service) RegisterUser(ctx context.Context, user entity.User) (entity.User, error) {
 	_, err := us.repo.UserByEmail(ctx, user.Email)
 	if err == nil {
 		return entity.User{}, fmt.Errorf("email %s already exist", user.Email)
@@ -54,7 +76,7 @@ func (us *UserService) RegisterUser(ctx context.Context, user entity.User) (enti
 	return user, nil
 }
 
-func (us *UserService) UserByID(ctx context.Context, id int64) (entity.User, error) {
+func (us *Service) UserByID(ctx context.Context, id int64) (entity.User, error) {
 	user, err := us.repo.UserByID(ctx, id)
 	if err != nil {
 		return entity.User{}, err
@@ -63,7 +85,7 @@ func (us *UserService) UserByID(ctx context.Context, id int64) (entity.User, err
 	return user, nil
 }
 
-func (us *UserService) DeleteUser(ctx context.Context, id int64) error {
+func (us *Service) DeleteUser(ctx context.Context, id int64) error {
 	_, err := us.repo.UserByID(ctx, id)
 	if err != nil {
 		return err
@@ -77,7 +99,7 @@ func (us *UserService) DeleteUser(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (us *UserService) Users(ctx context.Context) ([]entity.User, error) {
+func (us *Service) Users(ctx context.Context) ([]entity.User, error) {
 	users, err := us.repo.Users(ctx)
 	if err != nil {
 		return nil, err
@@ -86,7 +108,7 @@ func (us *UserService) Users(ctx context.Context) ([]entity.User, error) {
 	return users, nil
 }
 
-func (us *UserService) Login(ctx context.Context, email string, password string) (uuid.UUID, error) {
+func (us *Service) Login(ctx context.Context, email string, password string) (uuid.UUID, error) {
 	user, err := us.repo.UserByEmailAndPassword(ctx, email, password)
 	if err != nil {
 		if errors.Is(err, entity.ErrNotFound) {
@@ -112,13 +134,13 @@ func (us *UserService) Login(ctx context.Context, email string, password string)
 	return sessionID, nil
 }
 
-func (us *UserService) UserBySessionID(ctx context.Context, sessionID string) (entity.User, error) {
+func (us *Service) UserBySessionID(ctx context.Context, sessionID string) (entity.User, error) {
 	return us.repo.UserBySessionID(ctx, sessionID)
 }
 
 // project manipulations
 
-func (us *UserService) CreateProject(ctx context.Context, project entity.Project) (entity.Project, error) {
+func (us *Service) CreateProject(ctx context.Context, project entity.Project) (entity.Project, error) {
 	user := entity.AuthUser(ctx)
 
 	project.UserID = user.ID
@@ -132,7 +154,7 @@ func (us *UserService) CreateProject(ctx context.Context, project entity.Project
 	return project, nil
 }
 
-func (us *UserService) ProjectByID(ctx context.Context, id int64) (entity.Project, error) {
+func (us *Service) ProjectByID(ctx context.Context, id int64) (entity.Project, error) {
 	user := entity.AuthUser(ctx)
 
 	project, err := us.repo.ProjectByID(ctx, id)
@@ -147,12 +169,12 @@ func (us *UserService) ProjectByID(ctx context.Context, id int64) (entity.Projec
 	return project, nil
 }
 
-func (us *UserService) UserProjects(ctx context.Context) ([]entity.Project, error) {
+func (us *Service) UserProjects(ctx context.Context) ([]entity.Project, error) {
 	user := entity.AuthUser(ctx)
 	return us.repo.UserProjects(ctx, user.ID)
 }
 
-func (us *UserService) DeleteProject(ctx context.Context, projectID int64) error {
+func (us *Service) DeleteProject(ctx context.Context, projectID int64) error {
 	user := entity.AuthUser(ctx)
 
 	project, err := us.repo.ProjectByID(ctx, projectID)
@@ -172,7 +194,7 @@ func (us *UserService) DeleteProject(ctx context.Context, projectID int64) error
 	return nil
 }
 
-func (us *UserService) CreateTask(ctx context.Context, cTask entity.TaskToCreate) (entity.Task, error) {
+func (us *Service) CreateTask(ctx context.Context, cTask entity.TaskToCreate) (entity.Task, error) {
 	project, err := us.repo.ProjectByID(ctx, cTask.ProjectID)
 	if err != nil {
 		return entity.Task{}, err
@@ -194,7 +216,7 @@ func (us *UserService) CreateTask(ctx context.Context, cTask entity.TaskToCreate
 	return us.repo.CreateTask(ctx, task)
 }
 
-func (us *UserService) TaskByID(ctx context.Context, id int64) (entity.Task, error) {
+func (us *Service) TaskByID(ctx context.Context, id int64) (entity.Task, error) {
 	user := entity.AuthUser(ctx)
 
 	task, err := us.repo.TaskByID(ctx, id)
@@ -209,7 +231,7 @@ func (us *UserService) TaskByID(ctx context.Context, id int64) (entity.Task, err
 	return task, nil
 }
 
-func (us *UserService) SendVerificationLink(ctx context.Context, code string, email string) error {
+func (us *Service) SendVerificationLink(ctx context.Context, code string, email string) error {
 	message := map[string]interface{}{
 		"subject":  "Verification",
 		"receiver": email,
@@ -230,11 +252,11 @@ func (us *UserService) SendVerificationLink(ctx context.Context, code string, em
 	return nil
 }
 
-func (us *UserService) Verify(ctx context.Context, code string) error {
+func (us *Service) Verify(ctx context.Context, code string) error {
 	return us.repo.VerifyUser(ctx, code)
 }
 
-func (us *UserService) ProjectTasks(ctx context.Context, projectID int64) ([]entity.Task, error) {
+func (us *Service) ProjectTasks(ctx context.Context, projectID int64) ([]entity.Task, error) {
 	project, err := us.repo.ProjectByID(ctx, projectID)
 	if err != nil {
 		return nil, err
@@ -254,7 +276,7 @@ func (us *UserService) ProjectTasks(ctx context.Context, projectID int64) ([]ent
 	return tasks, nil
 }
 
-func (us *UserService) UserTasks(ctx context.Context) ([]entity.Task, error) {
+func (us *Service) UserTasks(ctx context.Context) ([]entity.Task, error) {
 	user := entity.AuthUser(ctx)
 
 	tasks, err := us.repo.UserTasks(ctx, user.ID)
@@ -265,7 +287,7 @@ func (us *UserService) UserTasks(ctx context.Context) ([]entity.Task, error) {
 	return tasks, nil
 }
 
-func (us *UserService) AddProjectMember(ctx context.Context, projectID int64, userID int64) error {
+func (us *Service) AddProjectMember(ctx context.Context, projectID int64, userID int64) error {
 	requester := entity.AuthUser(ctx)
 
 	project, err := us.repo.ProjectByID(ctx, projectID)
@@ -285,7 +307,7 @@ func (us *UserService) AddProjectMember(ctx context.Context, projectID int64, us
 	return nil
 }
 
-func (us *UserService) ProjectUsers(ctx context.Context, projectID int64) ([]entity.User, error) {
+func (us *Service) ProjectUsers(ctx context.Context, projectID int64) ([]entity.User, error) {
 	user := entity.AuthUser(ctx)
 
 	projects, err := us.repo.UserProjects(ctx, user.ID)
