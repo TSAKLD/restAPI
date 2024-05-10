@@ -14,6 +14,8 @@ type Error struct {
 
 // sendError sending response with error based on error + status code.
 func sendError(w http.ResponseWriter, err error) {
+	log.Println(err)
+
 	w.Header().Set("Content-Type", "application/json")
 
 	statusCode := http.StatusInternalServerError

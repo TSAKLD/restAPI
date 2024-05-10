@@ -138,12 +138,23 @@ func (r *Repository) UserBySessionID(ctx context.Context, sessionID string) (u e
 func (r *Repository) CreateProject(ctx context.Context, project entity.Project) (entity.Project, error) {
 	q := "INSERT INTO projects(name, user_id, created_at) VALUES($1, $2, $3) RETURNING id"
 
-	err := r.db.QueryRowContext(ctx, q, project.Name, project.UserID, project.CreatedAt).Scan(&project.ID)
+	tx, err := r.db.Begin()
+	if err != nil {
+		return entity.Project{}, err
+	}
+	defer tx.Rollback()
+
+	err = tx.QueryRowContext(ctx, q, project.Name, project.UserID, project.CreatedAt).Scan(&project.ID)
 	if err != nil {
 		return entity.Project{}, err
 	}
 
-	return project, nil
+	err = r.addProjectMember(ctx, tx, project.ID, project.UserID)
+	if err != nil {
+		return entity.Project{}, err
+	}
+
+	return project, tx.Commit()
 }
 
 func (r *Repository) UserProjects(ctx context.Context, userID int64) (projects []entity.Project, err error) {
@@ -288,4 +299,30 @@ func (r *Repository) UserTasks(ctx context.Context, userID int64) (tasks []entit
 	}
 
 	return tasks, nil
+}
+
+func (r *Repository) AddProjectMember(ctx context.Context, projectID int64, userID int64) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+
+	err = r.addProjectMember(ctx, tx, projectID, userID)
+	if err != nil {
+		return err
+	}
+
+	return tx.Commit()
+}
+
+func (r *Repository) addProjectMember(ctx context.Context, tx *sql.Tx, projectID int64, userID int64) error {
+	q := "INSERT INTO projects_users(project_id, user_id) VALUES ($1, $2)"
+
+	_, err := tx.ExecContext(ctx, q, projectID, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

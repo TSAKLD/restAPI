@@ -260,3 +260,23 @@ func (us *UserService) UserTasks(ctx context.Context) ([]entity.Task, error) {
 
 	return tasks, nil
 }
+
+func (us *UserService) AddProjectMember(ctx context.Context, projectID int64, userID int64) error {
+	requester := entity.AuthUser(ctx)
+
+	project, err := us.repo.ProjectByID(ctx, projectID)
+	if err != nil {
+		return err
+	}
+
+	if requester.ID != project.UserID {
+		return fmt.Errorf("%w: not your project", entity.ErrForbidden)
+	}
+
+	err = us.repo.AddProjectMember(ctx, projectID, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

@@ -122,7 +122,6 @@ func (h *Handler) SignIn(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("We are inside 2")
 	var project entity.Project
 
 	ctx := r.Context()
@@ -273,4 +272,28 @@ func (h *Handler) UserTasks(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sendResponse(w, tasks)
+}
+
+type AddProjectUserRequest struct {
+	ProjectID int64 `json:"project_id"`
+	UserID    int64 `json:"user_id"`
+}
+
+func (h *Handler) AddProjectUser(w http.ResponseWriter, r *http.Request) {
+	var request AddProjectUserRequest
+	err := json.NewDecoder(r.Body).Decode(&request)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	ctx := r.Context()
+
+	err = h.us.AddProjectMember(ctx, request.ProjectID, request.UserID)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
