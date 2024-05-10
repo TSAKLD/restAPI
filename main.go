@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/redis/go-redis/v9"
 	"log"
 	"restAPI/api"
 	"restAPI/bootstrap"
@@ -32,7 +33,15 @@ func main() {
 	authRepo := repository.NewAuthRepository(db)
 	taskRepo := repository.NewTaskRepository(db)
 
-	userServ := service.NewUserService(userRepo, authRepo)
+	client := redis.NewClient(&redis.Options{
+		Addr:     "localhost:6379",
+		Password: "",
+		DB:       0,
+	})
+
+	cache := repository.NewRedisCache(userRepo, client)
+
+	userServ := service.NewUserService(cache, authRepo)
 	authServ := service.NewAuthService(authRepo)
 	projServ := service.NewProjectRepository(projRepo, taskRepo)
 
