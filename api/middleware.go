@@ -4,15 +4,20 @@ import (
 	"context"
 	"log"
 	"net/http"
-	"restAPI/service"
 )
 
 type Middleware struct {
-	us *service.ProjectService
+	project ProjectService
+	auth    AuthService
+	user    UserService
 }
 
-func NewMiddleware(us *service.ProjectService) *Middleware {
-	return &Middleware{us: us}
+func NewMiddleware(project ProjectService, auth AuthService, user UserService) *Middleware {
+	return &Middleware{
+		project: project,
+		auth:    auth,
+		user:    user,
+	}
 }
 
 func (mw *Middleware) Log(next http.Handler) http.Handler {
@@ -31,7 +36,7 @@ func (mw *Middleware) Auth(next http.HandlerFunc) http.Handler {
 			return
 		}
 
-		user, err := mw.us.UserBySessionID(context.Background(), cookie.Value)
+		user, err := mw.auth.UserBySessionID(context.Background(), cookie.Value)
 		if err != nil {
 			sendError(w, err)
 			return

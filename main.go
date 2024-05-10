@@ -32,12 +32,18 @@ func main() {
 	authRepo := repository.NewAuthRepository(db)
 	taskRepo := repository.NewTaskRepository(db)
 
-	us := service.NewProjectRepository(projRepo, userRepo, authRepo, taskRepo)
+	userServ := service.NewUserService(userRepo, authRepo)
+	authServ := service.NewAuthService(authRepo)
+	projServ := service.NewProjectRepository(projRepo, taskRepo)
 
-	hdr := api.NewHandler(us)
-	mw := api.NewMiddleware(us)
+	taskHandler := api.NewTaskHandler(projServ)
+	projectHandler := api.NewProjectHandler(projServ)
+	userHandler := api.NewUserHandler(userServ)
+	authHandler := api.NewAuthHandler(authServ)
 
-	server := api.NewServer(hdr, cfg.HTTPPort, mw)
+	mw := api.NewMiddleware(projServ, authServ, userServ)
+
+	server := api.NewServer(taskHandler, projectHandler, userHandler, authHandler, cfg.HTTPPort, mw)
 
 	err = server.Start()
 	if err != nil {

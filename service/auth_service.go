@@ -1,10 +1,13 @@
 package service
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
+	"net/http"
 	"restAPI/entity"
 	"time"
 )
@@ -19,6 +22,42 @@ type AuthRepository interface {
 
 type AuthService struct {
 	auth AuthRepository
+	user UserRepository
+}
+
+func NewAuthService(auth AuthRepository) *AuthService {
+	return &AuthService{auth: auth}
+}
+
+func (us *AuthService) RegisterUser(ctx context.Context, user entity.User) (entity.User, error) {
+	_, err := us.user.UserByEmail(ctx, user.Email)
+	if err == nil {
+		return entity.User{}, fmt.Errorf("email %s already exist", user.Email)
+	}
+
+	user.CreatedAt = time.Now()
+
+	user, err = us.user.CreateUser(ctx, user)
+	if err != nil {
+		return entity.User{}, err
+	}
+
+	user.Password = ""
+	/////
+
+	code := uuid.NewString()
+
+	err = us.auth.SaveVerificationCode(ctx, code, user.ID)
+	if err != nil {
+		return entity.User{}, err
+	}
+
+	err = us.SendVerificationLink(ctx, code, user.Email)
+	if err != nil {
+		return entity.User{}, err
+	}
+
+	return user, nil
 }
 
 func (us *AuthService) Login(ctx context.Context, email string, password string) (uuid.UUID, error) {
@@ -53,4 +92,25 @@ func (us *AuthService) UserBySessionID(ctx context.Context, sessionID string) (e
 
 func (us *AuthService) Verify(ctx context.Context, code string) error {
 	return us.auth.VerifyUser(ctx, code)
+}
+
+func (us *AuthService) SendVerificationLink(ctx context.Context, code string, email string) error {
+	message := map[string]interface{}{
+		"subject":  "Verification",
+		"receiver": email,
+		"message":  fmt.Sprintf("Your Verification link is:http://localhost:8080/users/verify?code=%s", code),
+	}
+
+	bytesRepresentation, err := json.Marshal(message)
+	if err != nil {
+		return err
+	}
+
+	response, err := http.Post("http://localhost:8090/mail", "application/json", bytes.NewBuffer(bytesRepresentation))
+	if err != nil {
+		return err
+	}
+	defer response.Body.Close()
+
+	return nil
 }
