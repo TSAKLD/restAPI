@@ -250,7 +250,8 @@ func (h *Handler) ProjectTasks(w http.ResponseWriter, r *http.Request) {
 
 	projectID, err := strconv.ParseInt(qID, 10, 64)
 	if err != nil {
-
+		sendError(w, errors.New("'id' must be an integer"))
+		return
 	}
 
 	tasks, err := h.us.ProjectTasks(ctx, projectID)
@@ -296,4 +297,23 @@ func (h *Handler) AddProjectUser(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (h *Handler) ProjectUsers(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	qID := r.PathValue("project_id")
+
+	projectID, err := strconv.ParseInt(qID, 10, 64)
+	if err != nil {
+		sendError(w, errors.New("'id' must be an integer"))
+		return
+	}
+
+	users, err := h.us.ProjectUsers(ctx, projectID)
+	if err != nil {
+		sendError(w, err)
+		return
+	}
+
+	sendResponse(w, users)
 }

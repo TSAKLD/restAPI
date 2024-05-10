@@ -38,6 +38,7 @@ func (s *Server) setRoutes() {
 	s.router.Handle("POST /projects", s.mw.Auth(s.h.CreateProject))
 	s.router.Handle("DELETE /projects/{id}", s.mw.Auth(s.h.DeleteProject))
 	s.router.Handle("GET /projects", s.mw.Auth(s.h.UserProjects))
+	s.router.Handle("GET /projects/{project_id}/users", s.mw.Auth(s.h.ProjectUsers))
 	s.router.Handle("GET /projects/{id}", s.mw.Auth(s.h.ProjectByID))
 	//s.router.HandleFunc("POST /projects", s.h.EditProject)
 	s.router.Handle("POST /projects/users", s.mw.Auth(s.h.AddProjectUser))

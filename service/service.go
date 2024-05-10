@@ -280,3 +280,32 @@ func (us *UserService) AddProjectMember(ctx context.Context, projectID int64, us
 
 	return nil
 }
+
+func (us *UserService) ProjectUsers(ctx context.Context, projectID int64) ([]entity.User, error) {
+	user := entity.AuthUser(ctx)
+
+	projects, err := us.repo.UserProjects(ctx, user.ID)
+	if err != nil {
+		return nil, err
+	}
+
+	result := false
+
+	for _, v := range projects {
+		if projectID == v.ID {
+			result = true
+			break
+		}
+	}
+
+	if !result {
+		return nil, fmt.Errorf("%w: not your project", entity.ErrForbidden)
+	}
+
+	users, err := us.repo.ProjectUsers(ctx, projectID)
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
