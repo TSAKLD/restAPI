@@ -158,7 +158,7 @@ func (r *Repository) CreateProject(ctx context.Context, project entity.Project) 
 }
 
 func (r *Repository) UserProjects(ctx context.Context, userID int64) (projects []entity.Project, err error) {
-	q := "SELECT id, name, user_id, created_at FROM projects WHERE user_id = $1"
+	q := "SELECT p.id, p.name, p.user_id, p.created_at FROM projects p JOIN projects_users pu ON pu.project_id = p.id WHERE pu.user_id = $1"
 
 	rows, err := r.db.QueryContext(ctx, q, userID)
 	if err != nil {
@@ -301,6 +301,16 @@ func (r *Repository) UserTasks(ctx context.Context, userID int64) (tasks []entit
 	return tasks, nil
 }
 
+func (r *Repository) addProjectMember(ctx context.Context, tx *sql.Tx, projectID int64, userID int64) error {
+	q := "INSERT INTO projects_users(project_id, user_id) VALUES ($1, $2)"
+
+	_, err := tx.ExecContext(ctx, q, projectID, userID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
 func (r *Repository) AddProjectMember(ctx context.Context, projectID int64, userID int64) error {
 	tx, err := r.db.Begin()
 	if err != nil {
@@ -314,15 +324,4 @@ func (r *Repository) AddProjectMember(ctx context.Context, projectID int64, user
 	}
 
 	return tx.Commit()
-}
-
-func (r *Repository) addProjectMember(ctx context.Context, tx *sql.Tx, projectID int64, userID int64) error {
-	q := "INSERT INTO projects_users(project_id, user_id) VALUES ($1, $2)"
-
-	_, err := tx.ExecContext(ctx, q, projectID, userID)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }
