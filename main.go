@@ -27,10 +27,11 @@ func main() {
 
 	log.Println("postgres DB connection status: OK")
 
-	repo := repository.New(db)
+	projRepo := repository.NewProjectRepository(db)
 	userRepo := repository.NewUserRepository(db)
+	authRepo := repository.NewAuthRepository(db)
 
-	us := service.New(repo, userRepo)
+	us := service.New(projRepo, userRepo, authRepo)
 
 	hdr := api.NewHandler(us)
 	mw := api.NewMiddleware(us)

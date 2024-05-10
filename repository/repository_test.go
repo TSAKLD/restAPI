@@ -25,8 +25,8 @@ func TestRepository_CreateUser(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	repo := New(db)
 	userRepo := NewUserRepository(db)
+	authRepo := NewAuthRepository(db)
 
 	user := entity.User{
 		Name:       uuid.NewString(),
@@ -40,7 +40,7 @@ func TestRepository_CreateUser(t *testing.T) {
 	require.NoError(t, err)
 
 	// Get user by email && password
-	user2, err := repo.UserByEmailAndPassword(eCtx, user.Email, user.Password)
+	user2, err := authRepo.UserByEmailAndPassword(eCtx, user.Email, user.Password)
 	require.NoError(t, err)
 
 	user.Password = ""
@@ -83,10 +83,10 @@ func TestRepository_Users_Error(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
+	authRepo := NewAuthRepository(db)
 	userRepo := NewUserRepository(db)
-	repo := New(db)
 
-	_, err = repo.UserByEmailAndPassword(eCtx, uuid.NewString(), uuid.NewString())
+	_, err = authRepo.UserByEmailAndPassword(eCtx, uuid.NewString(), uuid.NewString())
 	require.ErrorIs(t, err, entity.ErrNotFound)
 
 	_, err = userRepo.UserByID(eCtx, time.Now().UnixNano())
@@ -106,7 +106,7 @@ func TestRepository_Users_Error(t *testing.T) {
 	_, err = userRepo.Users(eCtx)
 	require.Error(t, err)
 
-	_, err = repo.UserByEmailAndPassword(eCtx, uuid.NewString(), uuid.NewString())
+	_, err = authRepo.UserByEmailAndPassword(eCtx, uuid.NewString(), uuid.NewString())
 	require.Error(t, err)
 
 	_, err = userRepo.UserByID(eCtx, time.Now().UnixNano())
@@ -130,7 +130,7 @@ func TestRepository_CreateProject(t *testing.T) {
 	defer db.Close()
 
 	userRepo := NewUserRepository(db)
-	repo := New(db)
+	repo := NewProjectRepository(db)
 
 	// Create user
 	user := entity.User{
@@ -184,7 +184,7 @@ func TestRepository_Projects_Error(t *testing.T) {
 	require.NoError(t, err)
 	defer db.Close()
 
-	repo := New(db)
+	repo := NewProjectRepository(db)
 
 	_, err = repo.CreateProject(eCtx, entity.Project{})
 	require.Error(t, err)
@@ -215,7 +215,7 @@ func TestRepository_CreateTask(t *testing.T) {
 	defer db.Close()
 
 	userRepo := NewUserRepository(db)
-	repo := New(db)
+	repo := NewProjectRepository(db)
 
 	// Create user
 	user := entity.User{

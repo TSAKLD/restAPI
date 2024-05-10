@@ -7,7 +7,7 @@ import (
 	"restAPI/entity"
 )
 
-func (r *Repository) CreateTask(ctx context.Context, t entity.Task) (entity.Task, error) {
+func (r *ProjectRepository) CreateTask(ctx context.Context, t entity.Task) (entity.Task, error) {
 	q := "INSERT INTO tasks (name, project_id, user_id, created_at) VALUES ($1, $2, $3, $4) RETURNING id"
 
 	err := r.db.QueryRowContext(ctx, q, t.Name, t.ProjectID, t.UserID, t.CreatedAt).Scan(&t.ID)
@@ -18,7 +18,7 @@ func (r *Repository) CreateTask(ctx context.Context, t entity.Task) (entity.Task
 	return t, nil
 }
 
-func (r *Repository) TaskByID(ctx context.Context, id int64) (t entity.Task, err error) {
+func (r *ProjectRepository) TaskByID(ctx context.Context, id int64) (t entity.Task, err error) {
 	q := "SELECT id, name, project_id, user_id, created_at FROM tasks WHERE id = $1"
 
 	err = r.db.QueryRowContext(ctx, q, id).Scan(&t.ID, &t.Name, &t.ProjectID, &t.UserID, &t.CreatedAt)
@@ -33,7 +33,7 @@ func (r *Repository) TaskByID(ctx context.Context, id int64) (t entity.Task, err
 	return t, nil
 }
 
-func (r *Repository) ProjectTasks(ctx context.Context, projectID int64) (tasks []entity.Task, err error) {
+func (r *ProjectRepository) ProjectTasks(ctx context.Context, projectID int64) (tasks []entity.Task, err error) {
 	q := "SELECT id, name, project_id, user_id, created_at FROM tasks WHERE project_id = $1"
 
 	rows, err := r.db.QueryContext(ctx, q, projectID)
@@ -56,7 +56,7 @@ func (r *Repository) ProjectTasks(ctx context.Context, projectID int64) (tasks [
 	return tasks, nil
 }
 
-func (r *Repository) UserTasks(ctx context.Context, userID int64) (tasks []entity.Task, err error) {
+func (r *ProjectRepository) UserTasks(ctx context.Context, userID int64) (tasks []entity.Task, err error) {
 	q := "	SELECT id, name, project_id, user_id, created_at FROM tasks WHERE user_id = $1"
 
 	rows, err := r.db.QueryContext(ctx, q, userID)
