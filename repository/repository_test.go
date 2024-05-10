@@ -239,10 +239,11 @@ func TestRepository_CreateTask(t *testing.T) {
 	require.NoError(t, err)
 
 	actualTask := entity.Task{
-		Name:      uuid.NewString(),
-		UserID:    user.ID,
-		ProjectID: actualProject.ID,
-		CreatedAt: time.Now().UTC().Round(time.Millisecond),
+		Name:        uuid.NewString(),
+		UserID:      user.ID,
+		Description: uuid.NewString(),
+		ProjectID:   actualProject.ID,
+		CreatedAt:   time.Now().UTC().Round(time.Millisecond),
 	}
 
 	actualTask, err = task.CreateTask(eCtx, actualTask)

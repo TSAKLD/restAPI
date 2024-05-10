@@ -101,10 +101,11 @@ func (us *ProjectService) CreateTask(ctx context.Context, cTask entity.TaskToCre
 	}
 
 	task := entity.Task{
-		Name:      cTask.Name,
-		UserID:    user.ID,
-		ProjectID: cTask.ProjectID,
-		CreatedAt: time.Now(),
+		Name:        cTask.Name,
+		UserID:      user.ID,
+		Description: cTask.Description,
+		ProjectID:   cTask.ProjectID,
+		CreatedAt:   time.Now(),
 	}
 
 	return us.task.CreateTask(ctx, task)
