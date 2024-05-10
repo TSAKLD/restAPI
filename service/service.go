@@ -12,23 +12,28 @@ import (
 	"time"
 )
 
-type Repository interface {
+type UserRepository interface {
 	CreateUser(ctx context.Context, u entity.User) (entity.User, error)
 	DeleteUser(ctx context.Context, id int64) error
 	UserByID(ctx context.Context, id int64) (u entity.User, err error)
 	UserByEmail(ctx context.Context, email string) (u entity.User, err error)
 	Users(ctx context.Context) (users []entity.User, err error)
+}
+
+type Repository interface {
 	UserByEmailAndPassword(ctx context.Context, email string, password string) (u entity.User, err error)
 	ProjectUsers(ctx context.Context, projectID int64) (users []entity.User, err error)
 	CreateSession(ctx context.Context, sessionID uuid.UUID, userID int64, createdAt time.Time) error
 	UserBySessionID(ctx context.Context, sessionID string) (u entity.User, err error)
 	SaveVerificationCode(ctx context.Context, code string, userID int64) error
 	VerifyUser(ctx context.Context, code string) error
+	////
 	CreateProject(ctx context.Context, project entity.Project) (entity.Project, error)
 	UserProjects(ctx context.Context, userID int64) (projects []entity.Project, err error)
 	ProjectByID(ctx context.Context, id int64) (p entity.Project, err error)
 	DeleteProject(ctx context.Context, projectID int64) error
 	AddProjectMember(ctx context.Context, projectID int64, userID int64) error
+	////
 	CreateTask(ctx context.Context, t entity.Task) (entity.Task, error)
 	TaskByID(ctx context.Context, id int64) (t entity.Task, err error)
 	ProjectTasks(ctx context.Context, projectID int64) (tasks []entity.Task, err error)
@@ -36,24 +41,28 @@ type Repository interface {
 }
 
 type Service struct {
+	ur   UserRepository
 	repo Repository
 }
 
-func New(repo Repository) *Service {
-	return &Service{repo: repo}
+func New(repo Repository, ur UserRepository) *Service {
+	return &Service{
+		repo: repo,
+		ur:   ur,
+	}
 }
 
 // user manipulations
 
 func (us *Service) RegisterUser(ctx context.Context, user entity.User) (entity.User, error) {
-	_, err := us.repo.UserByEmail(ctx, user.Email)
+	_, err := us.ur.UserByEmail(ctx, user.Email)
 	if err == nil {
 		return entity.User{}, fmt.Errorf("email %s already exist", user.Email)
 	}
 
 	user.CreatedAt = time.Now()
 
-	user, err = us.repo.CreateUser(ctx, user)
+	user, err = us.ur.CreateUser(ctx, user)
 	if err != nil {
 		return entity.User{}, err
 	}
@@ -77,7 +86,7 @@ func (us *Service) RegisterUser(ctx context.Context, user entity.User) (entity.U
 }
 
 func (us *Service) UserByID(ctx context.Context, id int64) (entity.User, error) {
-	user, err := us.repo.UserByID(ctx, id)
+	user, err := us.ur.UserByID(ctx, id)
 	if err != nil {
 		return entity.User{}, err
 	}
@@ -86,12 +95,12 @@ func (us *Service) UserByID(ctx context.Context, id int64) (entity.User, error) 
 }
 
 func (us *Service) DeleteUser(ctx context.Context, id int64) error {
-	_, err := us.repo.UserByID(ctx, id)
+	_, err := us.ur.UserByID(ctx, id)
 	if err != nil {
 		return err
 	}
 
-	err = us.repo.DeleteUser(ctx, id)
+	err = us.ur.DeleteUser(ctx, id)
 	if err != nil {
 		return err
 	}
@@ -100,7 +109,7 @@ func (us *Service) DeleteUser(ctx context.Context, id int64) error {
 }
 
 func (us *Service) Users(ctx context.Context) ([]entity.User, error) {
-	users, err := us.repo.Users(ctx)
+	users, err := us.ur.Users(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -265,7 +274,7 @@ func (us *Service) ProjectTasks(ctx context.Context, projectID int64) ([]entity.
 	user := entity.AuthUser(ctx)
 
 	if project.UserID != user.ID {
-		return []entity.Task{}, fmt.Errorf("%w: not your project", entity.ErrForbidden)
+		return nil, fmt.Errorf("%w: not your project", entity.ErrForbidden)
 	}
 
 	tasks, err := us.repo.ProjectTasks(ctx, projectID)

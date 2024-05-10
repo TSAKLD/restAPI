@@ -9,7 +9,15 @@ import (
 	"time"
 )
 
-func (r *Repository) CreateUser(ctx context.Context, u entity.User) (entity.User, error) {
+type UserRepository struct {
+	db *sql.DB
+}
+
+func NewUserRepository(db *sql.DB) *UserRepository {
+	return &UserRepository{db: db}
+}
+
+func (r *UserRepository) CreateUser(ctx context.Context, u entity.User) (entity.User, error) {
 	q := "INSERT INTO users(name, password, email, created_at, is_verified) VALUES ($1, $2, $3, $4, $5) RETURNING id"
 
 	err := r.db.QueryRowContext(ctx, q, u.Name, u.Password, u.Email, u.CreatedAt, u.IsVerified).Scan(&u.ID)
@@ -20,7 +28,7 @@ func (r *Repository) CreateUser(ctx context.Context, u entity.User) (entity.User
 	return u, nil
 }
 
-func (r *Repository) DeleteUser(ctx context.Context, id int64) error {
+func (r *UserRepository) DeleteUser(ctx context.Context, id int64) error {
 	q := "DELETE FROM users WHERE id = $1"
 
 	_, err := r.db.ExecContext(ctx, q, id)
@@ -31,7 +39,7 @@ func (r *Repository) DeleteUser(ctx context.Context, id int64) error {
 	return nil
 }
 
-func (r *Repository) UserByID(ctx context.Context, id int64) (u entity.User, err error) {
+func (r *UserRepository) UserByID(ctx context.Context, id int64) (u entity.User, err error) {
 	q := "SELECT id, name, email, created_at, is_verified FROM users WHERE id = $1"
 
 	err = r.db.QueryRowContext(ctx, q, id).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt, &u.IsVerified)
@@ -46,7 +54,7 @@ func (r *Repository) UserByID(ctx context.Context, id int64) (u entity.User, err
 	return u, nil
 }
 
-func (r *Repository) UserByEmail(ctx context.Context, email string) (u entity.User, err error) {
+func (r *UserRepository) UserByEmail(ctx context.Context, email string) (u entity.User, err error) {
 	q := "SELECT id, name, email, created_at, is_verified FROM users WHERE email = $1"
 
 	err = r.db.QueryRowContext(ctx, q, email).Scan(&u.ID, &u.Name, &u.Email, &u.CreatedAt, &u.IsVerified)
@@ -61,7 +69,7 @@ func (r *Repository) UserByEmail(ctx context.Context, email string) (u entity.Us
 	return u, nil
 }
 
-func (r *Repository) Users(ctx context.Context) (users []entity.User, err error) {
+func (r *UserRepository) Users(ctx context.Context) (users []entity.User, err error) {
 	q := "SELECT id, name, email, created_at, is_verified FROM users"
 
 	rows, err := r.db.QueryContext(ctx, q)
