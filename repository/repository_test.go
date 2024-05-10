@@ -216,6 +216,7 @@ func TestRepository_CreateTask(t *testing.T) {
 
 	userRepo := NewUserRepository(db)
 	repo := NewProjectRepository(db)
+	task := NewTaskRepository(db)
 
 	// Create user
 	user := entity.User{
@@ -244,14 +245,14 @@ func TestRepository_CreateTask(t *testing.T) {
 		CreatedAt: time.Now().UTC().Round(time.Millisecond),
 	}
 
-	actualTask, err = repo.CreateTask(eCtx, actualTask)
+	actualTask, err = task.CreateTask(eCtx, actualTask)
 	require.NoError(t, err)
 
-	expectedTask, err := repo.TaskByID(eCtx, actualTask.ID)
+	expectedTask, err := task.TaskByID(eCtx, actualTask.ID)
 	require.NoError(t, err)
 	require.Equal(t, expectedTask, actualTask)
 
-	_, err = repo.TaskByID(eCtx, time.Now().UnixNano())
+	_, err = task.TaskByID(eCtx, time.Now().UnixNano())
 	require.ErrorIs(t, err, entity.ErrNotFound)
 
 	////////////////////////
@@ -282,30 +283,30 @@ func TestRepository_CreateTask(t *testing.T) {
 		CreatedAt: time.Now().UTC().Round(time.Millisecond),
 	}
 
-	actualTask2, err = repo.CreateTask(eCtx, actualTask2)
+	actualTask2, err = task.CreateTask(eCtx, actualTask2)
 	require.NoError(t, err)
 
-	actualTasks, err := repo.ProjectTasks(eCtx, actualProject.ID)
+	actualTasks, err := task.ProjectTasks(eCtx, actualProject.ID)
 	require.NoError(t, err)
 	require.Contains(t, actualTasks, actualTask)
 	require.NotContains(t, actualTasks, actualTask2)
 
-	actualTasks, err = repo.UserTasks(eCtx, user.ID)
+	actualTasks, err = task.UserTasks(eCtx, user.ID)
 	require.NoError(t, err)
 	require.Contains(t, actualTasks, actualTask)
 	require.NotContains(t, actualTasks, actualTask2)
 
 	db.Close()
 
-	_, err = repo.CreateTask(eCtx, entity.Task{})
+	_, err = task.CreateTask(eCtx, entity.Task{})
 	require.Error(t, err)
 
-	_, err = repo.TaskByID(eCtx, time.Now().UnixNano())
+	_, err = task.TaskByID(eCtx, time.Now().UnixNano())
 	require.Error(t, err)
 
-	_, err = repo.ProjectTasks(eCtx, time.Now().UnixNano())
+	_, err = task.ProjectTasks(eCtx, time.Now().UnixNano())
 	require.Error(t, err)
 
-	_, err = repo.UserTasks(eCtx, time.Now().UnixNano())
+	_, err = task.UserTasks(eCtx, time.Now().UnixNano())
 	require.Error(t, err)
 }

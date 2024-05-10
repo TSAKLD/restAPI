@@ -29,29 +29,34 @@ type AuthRepository interface {
 	VerifyUser(ctx context.Context, code string) error
 }
 
-type Repository interface {
-	CreateProject(ctx context.Context, project entity.Project) (entity.Project, error)
-	UserProjects(ctx context.Context, userID int64) (projects []entity.Project, err error)
-	ProjectByID(ctx context.Context, id int64) (p entity.Project, err error)
-	DeleteProject(ctx context.Context, projectID int64) error
-	AddProjectMember(ctx context.Context, projectID int64, userID int64) error
+type TaskRepository interface {
 	CreateTask(ctx context.Context, t entity.Task) (entity.Task, error)
 	TaskByID(ctx context.Context, id int64) (t entity.Task, err error)
 	ProjectTasks(ctx context.Context, projectID int64) (tasks []entity.Task, err error)
 	UserTasks(ctx context.Context, userID int64) (tasks []entity.Task, err error)
 }
 
+type ProjectRepository interface {
+	CreateProject(ctx context.Context, project entity.Project) (entity.Project, error)
+	UserProjects(ctx context.Context, userID int64) (projects []entity.Project, err error)
+	ProjectByID(ctx context.Context, id int64) (p entity.Project, err error)
+	DeleteProject(ctx context.Context, projectID int64) error
+	AddProjectMember(ctx context.Context, projectID int64, userID int64) error
+}
+
 type Service struct {
 	user    UserRepository
 	auth    AuthRepository
-	project Repository
+	project ProjectRepository
+	task    TaskRepository
 }
 
-func New(repo Repository, ur UserRepository, auth AuthRepository) *Service {
+func New(project ProjectRepository, ur UserRepository, auth AuthRepository, task TaskRepository) *Service {
 	return &Service{
-		project: repo,
+		project: project,
 		user:    ur,
 		auth:    auth,
+		task:    task,
 	}
 }
 
@@ -225,13 +230,13 @@ func (us *Service) CreateTask(ctx context.Context, cTask entity.TaskToCreate) (e
 		CreatedAt: time.Now(),
 	}
 
-	return us.project.CreateTask(ctx, task)
+	return us.task.CreateTask(ctx, task)
 }
 
 func (us *Service) TaskByID(ctx context.Context, id int64) (entity.Task, error) {
 	user := entity.AuthUser(ctx)
 
-	task, err := us.project.TaskByID(ctx, id)
+	task, err := us.task.TaskByID(ctx, id)
 	if err != nil {
 		return entity.Task{}, err
 	}
@@ -280,7 +285,7 @@ func (us *Service) ProjectTasks(ctx context.Context, projectID int64) ([]entity.
 		return nil, fmt.Errorf("%w: not your project", entity.ErrForbidden)
 	}
 
-	tasks, err := us.project.ProjectTasks(ctx, projectID)
+	tasks, err := us.task.ProjectTasks(ctx, projectID)
 	if err != nil {
 		return nil, err
 	}
@@ -291,7 +296,7 @@ func (us *Service) ProjectTasks(ctx context.Context, projectID int64) ([]entity.
 func (us *Service) UserTasks(ctx context.Context) ([]entity.Task, error) {
 	user := entity.AuthUser(ctx)
 
-	tasks, err := us.project.UserTasks(ctx, user.ID)
+	tasks, err := us.task.UserTasks(ctx, user.ID)
 	if err != nil {
 		return nil, err
 	}

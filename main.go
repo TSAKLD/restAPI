@@ -30,8 +30,9 @@ func main() {
 	projRepo := repository.NewProjectRepository(db)
 	userRepo := repository.NewUserRepository(db)
 	authRepo := repository.NewAuthRepository(db)
+	taskRepo := repository.NewTaskRepository(db)
 
-	us := service.New(projRepo, userRepo, authRepo)
+	us := service.New(projRepo, userRepo, authRepo, taskRepo)
 
 	hdr := api.NewHandler(us)
 	mw := api.NewMiddleware(us)
