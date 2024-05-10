@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-var Emptyctx = context.Background()
+var eCtx = context.Background()
 
 func TestRepository_CreateUser(t *testing.T) {
 	cfg := &bootstrap.Config{
@@ -35,11 +35,11 @@ func TestRepository_CreateUser(t *testing.T) {
 		IsVerified: true,
 	}
 	// Create user
-	user, err = repo.CreateUser(Emptyctx, user)
+	user, err = repo.CreateUser(eCtx, user)
 	require.NoError(t, err)
 
 	// Get user by email && password
-	user2, err := repo.UserByEmailAndPassword(Emptyctx, user.Email, user.Password)
+	user2, err := repo.UserByEmailAndPassword(eCtx, user.Email, user.Password)
 	require.NoError(t, err)
 
 	user.Password = ""
@@ -47,25 +47,25 @@ func TestRepository_CreateUser(t *testing.T) {
 	require.Equal(t, user, user2)
 
 	// Get user by ID
-	user2, err = repo.UserByID(Emptyctx, user.ID)
+	user2, err = repo.UserByID(eCtx, user.ID)
 	require.NoError(t, err)
 	require.Equal(t, user, user2)
 
 	// Get user by email
-	user2, err = repo.UserByEmail(Emptyctx, user.Email)
+	user2, err = repo.UserByEmail(eCtx, user.Email)
 	require.NoError(t, err)
 	require.Equal(t, user, user2)
 
 	// Get users
-	users, err := repo.Users(Emptyctx)
+	users, err := repo.Users(eCtx)
 	require.NoError(t, err)
 	require.Contains(t, users, user)
 
 	// Delete user
-	err = repo.DeleteUser(Emptyctx, user.ID)
+	err = repo.DeleteUser(eCtx, user.ID)
 	require.NoError(t, err)
 
-	_, err = repo.UserByID(Emptyctx, user.ID)
+	_, err = repo.UserByID(eCtx, user.ID)
 	require.ErrorIs(t, err, entity.ErrNotFound)
 }
 
@@ -84,33 +84,33 @@ func TestRepository_Users_Error(t *testing.T) {
 
 	repo := New(db)
 
-	_, err = repo.UserByEmailAndPassword(Emptyctx, uuid.NewString(), uuid.NewString())
+	_, err = repo.UserByEmailAndPassword(eCtx, uuid.NewString(), uuid.NewString())
 	require.ErrorIs(t, err, entity.ErrNotFound)
 
-	_, err = repo.UserByID(Emptyctx, time.Now().UnixNano())
+	_, err = repo.UserByID(eCtx, time.Now().UnixNano())
 	require.ErrorIs(t, err, entity.ErrNotFound)
 
-	_, err = repo.UserByEmail(Emptyctx, uuid.NewString())
+	_, err = repo.UserByEmail(eCtx, uuid.NewString())
 	require.ErrorIs(t, err, entity.ErrNotFound)
 
 	db.Close()
 
-	_, err = repo.CreateUser(Emptyctx, entity.User{})
+	_, err = repo.CreateUser(eCtx, entity.User{})
 	require.Error(t, err)
 
-	err = repo.DeleteUser(Emptyctx, time.Now().UnixNano())
+	err = repo.DeleteUser(eCtx, time.Now().UnixNano())
 	require.Error(t, err)
 
-	_, err = repo.Users(Emptyctx)
+	_, err = repo.Users(eCtx)
 	require.Error(t, err)
 
-	_, err = repo.UserByEmailAndPassword(Emptyctx, uuid.NewString(), uuid.NewString())
+	_, err = repo.UserByEmailAndPassword(eCtx, uuid.NewString(), uuid.NewString())
 	require.Error(t, err)
 
-	_, err = repo.UserByID(Emptyctx, time.Now().UnixNano())
+	_, err = repo.UserByID(eCtx, time.Now().UnixNano())
 	require.Error(t, err)
 
-	_, err = repo.UserByEmail(Emptyctx, uuid.NewString())
+	_, err = repo.UserByEmail(eCtx, uuid.NewString())
 	require.Error(t, err)
 }
 
@@ -137,7 +137,7 @@ func TestRepository_CreateProject(t *testing.T) {
 		CreatedAt: time.Now().UTC().Round(time.Millisecond),
 	}
 
-	user, err = repo.CreateUser(Emptyctx, user)
+	user, err = repo.CreateUser(eCtx, user)
 	require.NoError(t, err)
 
 	actualProject := entity.Project{
@@ -147,24 +147,24 @@ func TestRepository_CreateProject(t *testing.T) {
 	}
 
 	// Create project
-	actualProject, err = repo.CreateProject(Emptyctx, actualProject)
+	actualProject, err = repo.CreateProject(eCtx, actualProject)
 	require.NoError(t, err)
 
 	// User projects
-	projects, err := repo.UserProjects(Emptyctx, user.ID)
+	projects, err := repo.UserProjects(eCtx, user.ID)
 	require.NoError(t, err)
 	require.Contains(t, projects, actualProject)
 
 	// Project by ID
-	expectedProject, err := repo.ProjectByID(Emptyctx, actualProject.ID)
+	expectedProject, err := repo.ProjectByID(eCtx, actualProject.ID)
 	require.NoError(t, err)
 	require.Equal(t, expectedProject, actualProject)
 
 	// Delete project
-	err = repo.DeleteProject(Emptyctx, actualProject.ID)
+	err = repo.DeleteProject(eCtx, actualProject.ID)
 	require.NoError(t, err)
 
-	_, err = repo.ProjectByID(Emptyctx, actualProject.ID)
+	_, err = repo.ProjectByID(eCtx, actualProject.ID)
 	require.ErrorIs(t, err, entity.ErrNotFound)
 }
 
@@ -183,18 +183,18 @@ func TestRepository_Projects_Error(t *testing.T) {
 
 	repo := New(db)
 
-	_, err = repo.CreateProject(Emptyctx, entity.Project{})
+	_, err = repo.CreateProject(eCtx, entity.Project{})
 	require.Error(t, err)
 
-	_, err = repo.ProjectByID(Emptyctx, time.Now().UnixNano())
+	_, err = repo.ProjectByID(eCtx, time.Now().UnixNano())
 	require.ErrorIs(t, err, entity.ErrNotFound)
 
 	db.Close()
 
-	_, err = repo.UserProjects(Emptyctx, time.Now().UnixNano())
+	_, err = repo.UserProjects(eCtx, time.Now().UnixNano())
 	require.Error(t, err)
 
-	err = repo.DeleteProject(Emptyctx, time.Now().UnixNano())
+	err = repo.DeleteProject(eCtx, time.Now().UnixNano())
 	require.Error(t, err)
 }
 
@@ -221,7 +221,7 @@ func TestRepository_CreateTask(t *testing.T) {
 		CreatedAt: time.Now().UTC().Round(time.Millisecond),
 	}
 
-	user, err = repo.CreateUser(Emptyctx, user)
+	user, err = repo.CreateUser(eCtx, user)
 	require.NoError(t, err)
 
 	actualProject := entity.Project{
@@ -230,7 +230,7 @@ func TestRepository_CreateTask(t *testing.T) {
 		CreatedAt: time.Now().UTC().Round(time.Millisecond),
 	}
 
-	actualProject, err = repo.CreateProject(Emptyctx, actualProject)
+	actualProject, err = repo.CreateProject(eCtx, actualProject)
 	require.NoError(t, err)
 
 	actualTask := entity.Task{
@@ -240,14 +240,14 @@ func TestRepository_CreateTask(t *testing.T) {
 		CreatedAt: time.Now().UTC().Round(time.Millisecond),
 	}
 
-	actualTask, err = repo.CreateTask(Emptyctx, actualTask)
+	actualTask, err = repo.CreateTask(eCtx, actualTask)
 	require.NoError(t, err)
 
-	expectedTask, err := repo.TaskByID(Emptyctx, actualTask.ID)
+	expectedTask, err := repo.TaskByID(eCtx, actualTask.ID)
 	require.NoError(t, err)
 	require.Equal(t, expectedTask, actualTask)
 
-	_, err = repo.TaskByID(Emptyctx, time.Now().UnixNano())
+	_, err = repo.TaskByID(eCtx, time.Now().UnixNano())
 	require.ErrorIs(t, err, entity.ErrNotFound)
 
 	////////////////////////
@@ -259,7 +259,7 @@ func TestRepository_CreateTask(t *testing.T) {
 		CreatedAt: time.Now().UTC().Round(time.Millisecond),
 	}
 
-	user2, err = repo.CreateUser(Emptyctx, user2)
+	user2, err = repo.CreateUser(eCtx, user2)
 	require.NoError(t, err)
 
 	actualProject2 := entity.Project{
@@ -268,7 +268,7 @@ func TestRepository_CreateTask(t *testing.T) {
 		CreatedAt: time.Now().UTC().Round(time.Millisecond),
 	}
 
-	actualProject2, err = repo.CreateProject(Emptyctx, actualProject2)
+	actualProject2, err = repo.CreateProject(eCtx, actualProject2)
 	require.NoError(t, err)
 
 	actualTask2 := entity.Task{
@@ -278,30 +278,30 @@ func TestRepository_CreateTask(t *testing.T) {
 		CreatedAt: time.Now().UTC().Round(time.Millisecond),
 	}
 
-	actualTask2, err = repo.CreateTask(Emptyctx, actualTask2)
+	actualTask2, err = repo.CreateTask(eCtx, actualTask2)
 	require.NoError(t, err)
 
-	actualTasks, err := repo.ProjectTasks(Emptyctx, actualProject.ID)
+	actualTasks, err := repo.ProjectTasks(eCtx, actualProject.ID)
 	require.NoError(t, err)
 	require.Contains(t, actualTasks, actualTask)
 	require.NotContains(t, actualTasks, actualTask2)
 
-	actualTasks, err = repo.UserTasks(Emptyctx, user.ID)
+	actualTasks, err = repo.UserTasks(eCtx, user.ID)
 	require.NoError(t, err)
 	require.Contains(t, actualTasks, actualTask)
 	require.NotContains(t, actualTasks, actualTask2)
 
 	db.Close()
 
-	_, err = repo.CreateTask(Emptyctx, entity.Task{})
+	_, err = repo.CreateTask(eCtx, entity.Task{})
 	require.Error(t, err)
 
-	_, err = repo.TaskByID(Emptyctx, time.Now().UnixNano())
+	_, err = repo.TaskByID(eCtx, time.Now().UnixNano())
 	require.Error(t, err)
 
-	_, err = repo.ProjectTasks(Emptyctx, time.Now().UnixNano())
+	_, err = repo.ProjectTasks(eCtx, time.Now().UnixNano())
 	require.Error(t, err)
 
-	_, err = repo.UserTasks(Emptyctx, time.Now().UnixNano())
+	_, err = repo.UserTasks(eCtx, time.Now().UnixNano())
 	require.Error(t, err)
 }

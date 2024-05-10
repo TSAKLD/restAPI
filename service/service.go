@@ -96,6 +96,10 @@ func (us *UserService) Login(ctx context.Context, email string, password string)
 		return uuid.UUID{}, err
 	}
 
+	if !user.IsVerified {
+		return uuid.UUID{}, fmt.Errorf("%w: not verified, check your email", entity.ErrUnauthorized)
+	}
+
 	sessionID := uuid.New()
 
 	createdAt := time.Now()
