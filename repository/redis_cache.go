@@ -78,11 +78,9 @@ func (r RedisCache) UserByEmail(ctx context.Context, email string) (u entity.Use
 }
 
 func (r RedisCache) Users(ctx context.Context) (users []entity.User, err error) {
-	//TODO implement me
-	panic("implement me")
+	return r.user.Users(ctx)
 }
 
 func (r RedisCache) ProjectUsers(ctx context.Context, projectID int64) (users []entity.User, err error) {
-	//TODO implement me
-	panic("implement me")
+	return r.user.ProjectUsers(ctx, projectID)
 }
