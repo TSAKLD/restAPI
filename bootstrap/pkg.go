@@ -6,6 +6,7 @@ import (
 	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
+	"github.com/segmentio/kafka-go"
 )
 
 // DBConnect connects you to Postgresql based on Config.
@@ -35,4 +36,13 @@ func RedisConnect(addr string) (*redis.Client, error) {
 	}
 
 	return client, nil
+}
+
+func KafkaConnect(addr string, topic string) (*kafka.Conn, error) {
+	conn, err := kafka.DialLeader(context.Background(), "tcp", addr, topic, 0)
+	if err != nil {
+		return nil, err
+	}
+
+	return conn, nil
 }

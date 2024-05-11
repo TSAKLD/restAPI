@@ -21,10 +21,11 @@ type UserService struct {
 	project ProjectRepository
 }
 
-func NewUserService(user UserRepository, auth AuthRepository) *UserService {
+func NewUserService(user UserRepository, auth AuthRepository, project ProjectRepository) *UserService {
 	return &UserService{
-		user: user,
-		auth: auth,
+		user:    user,
+		auth:    auth,
+		project: project,
 	}
 }
 

@@ -1,13 +1,12 @@
 package service
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/google/uuid"
-	"net/http"
+	"github.com/segmentio/kafka-go"
 	"restAPI/entity"
 	"time"
 )
@@ -21,12 +20,17 @@ type AuthRepository interface {
 }
 
 type AuthService struct {
-	auth AuthRepository
-	user UserRepository
+	auth  AuthRepository
+	user  UserRepository
+	kafka *kafka.Conn
 }
 
-func NewAuthService(auth AuthRepository) *AuthService {
-	return &AuthService{auth: auth}
+func NewAuthService(auth AuthRepository, user UserRepository, kafkaConn *kafka.Conn) *AuthService {
+	return &AuthService{
+		auth:  auth,
+		user:  user,
+		kafka: kafkaConn,
+	}
 }
 
 func (us *AuthService) RegisterUser(ctx context.Context, user entity.User) (entity.User, error) {
@@ -94,22 +98,26 @@ func (us *AuthService) Verify(ctx context.Context, code string) error {
 }
 
 func (us *AuthService) SendVerificationLink(ctx context.Context, code string, email string) error {
-	message := map[string]interface{}{
+	message := map[string]string{
 		"subject":  "Verification",
 		"receiver": email,
 		"message":  fmt.Sprintf("Your Verification link is:http://localhost:8080/users/verify?code=%s", code),
 	}
 
-	bytesRepresentation, err := json.Marshal(message)
+	b, err := json.Marshal(message)
 	if err != nil {
 		return err
 	}
 
-	response, err := http.Post("http://localhost:8090/mail", "application/json", bytes.NewBuffer(bytesRepresentation))
+	msg := kafka.Message{
+		Key:   []byte(code),
+		Value: b,
+	}
+
+	_, err = us.kafka.WriteMessages(msg)
 	if err != nil {
 		return err
 	}
-	defer response.Body.Close()
 
 	return nil
 }
