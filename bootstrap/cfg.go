@@ -15,9 +15,7 @@ type Config struct {
 
 	HTTPPort string
 
-	RedisHost     string
-	RedisPassword string
-	RedisDB       string
+	RedisAddr string
 }
 
 func NewConfig() (*Config, error) {
@@ -35,9 +33,7 @@ func NewConfig() (*Config, error) {
 
 		HTTPPort: os.Getenv("HTTP_PORT"),
 
-		RedisHost:     os.Getenv("REDIS_HOST"),
-		RedisPassword: os.Getenv("REDIS_PASS"),
-		RedisDB:       os.Getenv("REDIS_DB"),
+		RedisAddr: os.Getenv("REDIS_ADDR"),
 	}, nil
 }
 
@@ -74,13 +70,8 @@ func (c *Config) Validate() []error {
 		errorList = append(errorList, err)
 	}
 
-	if c.RedisHost == "" {
+	if c.RedisAddr == "" {
 		err := errors.New("invalid Redis host field \n")
-		errorList = append(errorList, err)
-	}
-
-	if c.RedisDB == "" {
-		err := errors.New("invalid RedisDB field \n")
 		errorList = append(errorList, err)
 	}
 

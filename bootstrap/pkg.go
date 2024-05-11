@@ -1,11 +1,11 @@
 package bootstrap
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	_ "github.com/lib/pq"
 	"github.com/redis/go-redis/v9"
-	"strconv"
 )
 
 // DBConnect connects you to Postgresql based on Config.
@@ -22,19 +22,17 @@ func DBConnect(c *Config) (*sql.DB, error) {
 }
 
 // RedisConnect connects you to Redis based on Config.
-func RedisConnect(c *Config) (*redis.Client, error) {
-	db, err := strconv.Atoi(c.RedisDB)
-	if err != nil {
-		return nil, err
-	}
-
+func RedisConnect(addr string) (*redis.Client, error) {
 	opts := redis.Options{
-		Addr:     c.RedisHost,
-		Password: c.RedisPassword,
-		DB:       db,
+		Addr: addr,
 	}
 
 	client := redis.NewClient(&opts)
+
+	err := client.Ping(context.Background()).Err()
+	if err != nil {
+		return nil, err
+	}
 
 	return client, nil
 }

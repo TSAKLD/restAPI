@@ -32,9 +32,9 @@ func main() {
 	authRepo := repository.NewAuthRepository(db)
 	taskRepo := repository.NewTaskRepository(db)
 
-	client, err := bootstrap.RedisConnect(cfg)
+	client, err := bootstrap.RedisConnect(cfg.RedisAddr)
 	if err != nil {
-		log.Println("Problem with Redis connection: ", err)
+		log.Fatal("Problem with Redis connection: ", err)
 	}
 	defer client.Close()
 
