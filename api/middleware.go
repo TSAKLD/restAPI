@@ -7,16 +7,12 @@ import (
 )
 
 type Middleware struct {
-	project ProjectService
-	auth    AuthService
-	user    UserService
+	auth AuthService
 }
 
-func NewMiddleware(project ProjectService, auth AuthService, user UserService) *Middleware {
+func NewMiddleware(auth AuthService) *Middleware {
 	return &Middleware{
-		project: project,
-		auth:    auth,
-		user:    user,
+		auth: auth,
 	}
 }
 

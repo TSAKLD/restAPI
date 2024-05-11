@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/redis/go-redis/v9"
 	"log"
 	"restAPI/api"
 	"restAPI/bootstrap"
@@ -22,7 +21,7 @@ func main() {
 
 	db, err := bootstrap.DBConnect(cfg)
 	if err != nil {
-		log.Fatal("Problem with Database connection: ", err)
+		log.Fatal("Problem with Postgres connection: ", err)
 	}
 	defer db.Close()
 
@@ -33,11 +32,11 @@ func main() {
 	authRepo := repository.NewAuthRepository(db)
 	taskRepo := repository.NewTaskRepository(db)
 
-	client := redis.NewClient(&redis.Options{
-		Addr:     "localhost:6379",
-		Password: "",
-		DB:       0,
-	})
+	client, err := bootstrap.RedisConnect(cfg)
+	if err != nil {
+		log.Println("Problem with Redis connection: ", err)
+	}
+	defer client.Close()
 
 	cache := repository.NewRedisCache(userRepo, client)
 
@@ -50,7 +49,7 @@ func main() {
 	userHandler := api.NewUserHandler(userServ)
 	authHandler := api.NewAuthHandler(authServ)
 
-	mw := api.NewMiddleware(projServ, authServ, userServ)
+	mw := api.NewMiddleware(authServ)
 
 	server := api.NewServer(taskHandler, projectHandler, userHandler, authHandler, cfg.HTTPPort, mw)
 

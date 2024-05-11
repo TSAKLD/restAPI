@@ -43,7 +43,6 @@ func (us *AuthService) RegisterUser(ctx context.Context, user entity.User) (enti
 	}
 
 	user.Password = ""
-	/////
 
 	code := uuid.NewString()
 

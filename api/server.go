@@ -38,7 +38,7 @@ func (s *Server) setRoutes() {
 	s.router.Handle("GET /projects/{project_id}/users", s.mw.Auth(s.userHdr.ProjectUsers))
 
 	// auth routes
-	s.router.HandleFunc("POST /users", s.authHdr.CreateUser)
+	s.router.HandleFunc("POST /users", s.authHdr.Registration)
 	s.router.HandleFunc("GET /users/verify", s.authHdr.Verify)
 	s.router.HandleFunc("POST /signin", s.authHdr.SignIn)
 
@@ -63,4 +63,5 @@ func (s *Server) Start() error {
 	fmt.Println("Server is listening... at post:", s.port)
 
 	return http.ListenAndServe(":"+s.port, s.mw.Log(s.router))
+
 }
